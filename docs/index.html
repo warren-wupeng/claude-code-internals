@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Code 源码深度解读 | Kira Chen</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Source+Code+Pro:wght@300;400;500;700&family=Inter+Tight:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+    <style>
+        :root {
+            /* Neo-Terminal Color Palette */
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #0f1420;
+            --bg-tertiary: #1a1f2e;
+            --bg-code: #0d1117;
+
+            --text-primary: #00ff88;
+            --text-secondary: #39ff14;
+            --text-muted: #4ade80;
+            --text-dim: #6b7280;
+            --text-white: #f0f4f8;
+
+            --accent-cyan: #00f5ff;
+            --accent-purple: #8b5cf6;
+            --accent-orange: #ff8c00;
+            --accent-pink: #ff00ff;
+
+            --border: #1f2937;
+            --border-accent: #00ff88;
+
+            /* Typography */
+            --font-display: 'Orbitron', monospace;
+            --font-body: 'Inter Tight', sans-serif;
+            --font-mono: 'Source Code Pro', monospace;
+
+            /* Spacing */
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+            --spacing-2xl: 3rem;
+
+            /* Shadows & Effects */
+            --glow-primary: 0 0 20px rgba(0, 255, 136, 0.3);
+            --glow-accent: 0 0 30px rgba(0, 245, 255, 0.2);
+            --shadow-deep: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-primary);
+            color: var(--text-white);
+            line-height: 1.7;
+            font-size: 16px;
+            overflow-x: hidden;
+
+            /* Animated background grid */
+            background-image:
+                radial-gradient(circle at 20% 50%, rgba(0, 255, 136, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0, 245, 255, 0.05) 0%, transparent 50%),
+                linear-gradient(90deg, transparent 98%, rgba(0, 255, 136, 0.03) 100%);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-cyan);
+            border-radius: 4px;
+            box-shadow: var(--glow-accent);
+        }
+
+        /* Progress bar */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            z-index: 1000;
+            background: linear-gradient(90deg, var(--text-primary), var(--accent-cyan));
+            transform-origin: left;
+            transform: scaleX(0);
+            transition: transform 0.1s ease-out;
+            box-shadow: var(--glow-primary);
+        }
+
+        /* Navigation */
+        .nav-container {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 280px;
+            height: 100vh;
+            background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            border-right: 2px solid var(--border-accent);
+            padding: var(--spacing-xl);
+            z-index: 100;
+            box-shadow: var(--shadow-deep);
+
+            /* Cyber grid overlay */
+            background-image:
+                linear-gradient(45deg, transparent 48%, rgba(0, 255, 136, 0.02) 49%, rgba(0, 255, 136, 0.02) 51%, transparent 52%);
+        }
+
+        .nav-header {
+            margin-bottom: var(--spacing-2xl);
+        }
+
+        .nav-title {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--text-primary);
+            text-shadow: var(--glow-primary);
+            margin-bottom: var(--spacing-sm);
+            letter-spacing: 0.02em;
+        }
+
+        .nav-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            font-weight: 300;
+        }
+
+        .nav-toc {
+            list-style: none;
+        }
+
+        .nav-toc li {
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .nav-toc a {
+            display: block;
+            color: var(--text-muted);
+            text-decoration: none;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: 6px;
+            font-weight: 400;
+            font-size: 0.9rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-left: 3px solid transparent;
+        }
+
+        .nav-toc a:hover {
+            background: rgba(0, 255, 136, 0.1);
+            color: var(--text-primary);
+            border-left-color: var(--text-primary);
+            transform: translateX(4px);
+            box-shadow: var(--glow-primary);
+        }
+
+        .nav-toc a.active {
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--text-primary);
+            border-left-color: var(--text-primary);
+            font-weight: 600;
+            box-shadow: var(--glow-primary);
+        }
+
+        /* Main content */
+        .main-container {
+            margin-left: 280px;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            padding: var(--spacing-2xl);
+            border-bottom: 2px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(circle at 30% 40%, rgba(0, 255, 136, 0.08) 0%, transparent 60%),
+                radial-gradient(circle at 70% 60%, rgba(0, 245, 255, 0.05) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .header-content {
+            max-width: 900px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .main-title {
+            font-family: var(--font-display);
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 900;
+            color: var(--text-primary);
+            text-shadow: var(--glow-primary);
+            margin-bottom: var(--spacing-md);
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            color: var(--text-dim);
+            font-weight: 300;
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .meta-info {
+            display: flex;
+            gap: var(--spacing-lg);
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .meta-icon {
+            font-size: 1rem;
+            color: var(--accent-cyan);
+        }
+
+        .content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: var(--spacing-2xl);
+        }
+
+        /* Typography styles */
+        .chapter {
+            margin-bottom: var(--spacing-2xl);
+            scroll-margin-top: 100px;
+        }
+
+        .chapter-title {
+            font-family: var(--font-display);
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-xl);
+            text-shadow: var(--glow-primary);
+            position: relative;
+        }
+
+        .chapter-title::before {
+            content: '';
+            position: absolute;
+            left: -40px;
+            top: 50%;
+            width: 4px;
+            height: 60%;
+            background: linear-gradient(180deg, var(--text-primary), var(--accent-cyan));
+            transform: translateY(-50%);
+            border-radius: 2px;
+            box-shadow: var(--glow-primary);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin: var(--spacing-xl) 0 var(--spacing-lg);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: var(--spacing-sm);
+        }
+
+        .subsection-title {
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: var(--accent-cyan);
+            margin: var(--spacing-lg) 0 var(--spacing-md);
+        }
+
+        p {
+            margin-bottom: var(--spacing-md);
+            color: var(--text-white);
+            line-height: 1.8;
+        }
+
+        /* Code and pre styles */
+        pre {
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: var(--spacing-lg);
+            margin: var(--spacing-lg) 0;
+            overflow-x: auto;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            line-height: 1.6;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        code {
+            font-family: var(--font-mono);
+            background: rgba(0, 255, 136, 0.1);
+            color: var(--text-primary);
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+
+        /* ASCII Art styling */
+        .ascii-art {
+            background: var(--bg-code);
+            border: 2px solid var(--border-accent);
+            border-radius: 8px;
+            padding: var(--spacing-lg);
+            margin: var(--spacing-xl) 0;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            line-height: 1.2;
+            color: var(--text-primary);
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+            overflow-x: auto;
+            box-shadow: var(--glow-primary);
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: var(--spacing-xl) 0;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        th {
+            background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary));
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: var(--spacing-md);
+            text-align: left;
+            border-bottom: 2px solid var(--border-accent);
+        }
+
+        td {
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--border);
+            color: var(--text-white);
+        }
+
+        tr:nth-child(even) td {
+            background: rgba(0, 255, 136, 0.02);
+        }
+
+        tr:hover td {
+            background: rgba(0, 255, 136, 0.05);
+        }
+
+        /* Lists */
+        ul, ol {
+            margin: var(--spacing-md) 0;
+            padding-left: var(--spacing-xl);
+        }
+
+        li {
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-white);
+        }
+
+        /* Links */
+        a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        a:hover {
+            color: var(--text-primary);
+            text-shadow: var(--glow-primary);
+        }
+
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--text-primary);
+            background: rgba(0, 255, 136, 0.05);
+            padding: var(--spacing-md) var(--spacing-lg);
+            margin: var(--spacing-lg) 0;
+            border-radius: 0 8px 8px 0;
+            font-style: italic;
+            color: var(--text-muted);
+            box-shadow: var(--glow-primary);
+        }
+
+        /* Back to top button */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--text-primary), var(--accent-cyan));
+            border: none;
+            border-radius: 50%;
+            color: var(--bg-primary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            box-shadow: var(--glow-primary);
+            z-index: 1000;
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--glow-accent);
+        }
+
+        /* Responsive design */
+        @media (max-width: 1024px) {
+            .nav-container {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .nav-container.open {
+                transform: translateX(0);
+            }
+
+            .main-container {
+                margin-left: 0;
+            }
+
+            .content {
+                padding: var(--spacing-lg);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: var(--spacing-lg);
+            }
+
+            .main-title {
+                font-size: 2rem;
+            }
+
+            .meta-info {
+                flex-direction: column;
+                gap: var(--spacing-sm);
+            }
+
+            .chapter-title {
+                font-size: 2rem;
+            }
+
+            .chapter-title::before {
+                left: -20px;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chapter {
+            animation: fadeInUp 0.6s ease-out;
+            animation-fill-mode: both;
+        }
+
+        .chapter:nth-child(1) { animation-delay: 0.1s; }
+        .chapter:nth-child(2) { animation-delay: 0.2s; }
+        .chapter:nth-child(3) { animation-delay: 0.3s; }
+        .chapter:nth-child(4) { animation-delay: 0.4s; }
+        .chapter:nth-child(5) { animation-delay: 0.5s; }
+
+        /* Hover effects for interactive elements */
+        .nav-container:hover {
+            background: linear-gradient(180deg, var(--bg-secondary) 0%, rgba(26, 31, 46, 0.95) 100%);
+        }
+
+        /* Terminal-style typing effect for the main title */
+        .typing-effect::after {
+            content: '█';
+            color: var(--text-primary);
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        /* Glitch effect for chapter titles on hover */
+        .chapter-title {
+            position: relative;
+        }
+
+        .chapter-title:hover::before,
+        .chapter-title:hover::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+        }
+
+        .chapter-title:hover::before {
+            animation: glitch-1 0.3s ease-in-out;
+            color: var(--accent-cyan);
+            z-index: -1;
+        }
+
+        .chapter-title:hover::after {
+            animation: glitch-2 0.3s ease-in-out;
+            color: var(--accent-pink);
+            z-index: -2;
+        }
+
+        @keyframes glitch-1 {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+        }
+
+        @keyframes glitch-2 {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(2px, -2px); }
+            40% { transform: translate(2px, 2px); }
+            60% { transform: translate(-2px, -2px); }
+            80% { transform: translate(-2px, 2px); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Progress bar -->
+    <div class="progress-bar"></div>
+
+    <!-- Navigation -->
+    <nav class="nav-container">
+        <div class="nav-header">
+            <h1 class="nav-title">Claude Code</h1>
+            <p class="nav-subtitle">源码深度解读</p>
+        </div>
+
+        <ul class="nav-toc">
+            <li><a href="#ch1" data-target="ch1">第一章: 背景与概述</a></li>
+            <li><a href="#ch2" data-target="ch2">第二章: 宏观架构</a></li>
+            <li><a href="#ch3" data-target="ch3">第三章: 核心引擎</a></li>
+            <li><a href="#ch4" data-target="ch4">第四章: 工具系统</a></li>
+            <li><a href="#ch5" data-target="ch5">第五章: 多Agent协作</a></li>
+            <li><a href="#ch6" data-target="ch6">第六章: 工程化亮点</a></li>
+            <li><a href="#ch7" data-target="ch7">第七章: 总结与启示</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main content -->
+    <main class="main-container">
+        <header class="header">
+            <div class="header-content">
+                <h1 class="main-title typing-effect">Claude Code 源码深度解读</h1>
+                <p class="subtitle">Anthropic CLI 工具完整架构剖析与工程化洞察</p>
+                <div class="meta-info">
+                    <div class="meta-item">
+                        <span class="meta-icon">👨‍💻</span>
+                        <span>Kira Chen</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-icon">📅</span>
+                        <span>2026-03-31</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-icon">📊</span>
+                        <span>512,000+ 行代码</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-icon">⚡</span>
+                        <span>41 个工具</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-icon">🔗</span>
+                        <a href="https://github.com/warren-wupeng/claude-code-internals" target="_blank">GitHub 仓库</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="content">
+            <section id="ch1" class="chapter">
+                <h2 class="chapter-title" data-text="第一章：背景与概述">第一章：背景与概述</h2>
+
+                <h3 class="section-title">1.1 泄漏事件始末</h3>
+                <p>2026 年 3 月 31 日，安全研究员 Chaofan Shou（@Fried_rice）发现 Anthropic 在发布 Claude Code npm 包时，将一个 <code>.map</code>（Source Map）文件意外暴露在公网可访问的 R2 存储桶中。Source Map 是 JavaScript 构建工具生成的调试文件，其中包含从编译产物到原始 TypeScript 源代码的完整映射——这意味着任何人都可以通过这个文件还原出 Claude Code 的全部未混淆源码。</p>
+
+                <p>该事件迅速在开发者社区扩散。<a href="https://github.com/warren-wupeng/claude-code">warren-wupeng/claude-code</a> 仓库是对这批源码的公开存档，附带了一个由仓库作者额外添加的 MCP 服务器（<code>mcp-server/</code>），使任何 MCP 兼容工具（VS Code Copilot、Claude Desktop 等）都可以将此源码作为知识库进行探索。</p>
+
+                <h3 class="section-title">1.2 代码规模</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>维度</th>
+                            <th>数字</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>总行数</td>
+                            <td>~512,000 行</td>
+                        </tr>
+                        <tr>
+                            <td>源文件数</td>
+                            <td>~1,913 个</td>
+                        </tr>
+                        <tr>
+                            <td>主语言</td>
+                            <td>TypeScript（30.3 MB）</td>
+                        </tr>
+                        <tr>
+                            <td>工具实现</td>
+                            <td>41 个</td>
+                        </tr>
+                        <tr>
+                            <td>斜杠命令</td>
+                            <td>~50 个</td>
+                        </tr>
+                        <tr>
+                            <td>UI 组件</td>
+                            <td>~140 个 Ink/React 组件</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p>这不是一个玩具项目。从代码量和工程复杂度看，这是一个经过数十人多年迭代、投入大量工程资源的生产级系统。</p>
+
+                <h3 class="section-title">1.3 本文范围</h3>
+                <p>本文聚焦五个核心主题：</p>
+                <ol>
+                    <li><strong>宏观架构</strong>：系统是如何组织的？</li>
+                    <li><strong>QueryEngine</strong>：LLM 调用的核心循环是什么？</li>
+                    <li><strong>工具系统</strong>：41 个工具如何设计和管理？</li>
+                    <li><strong>多 Agent 协作</strong>：Swarm 如何实现进程间协调？</li>
+                    <li><strong>工程化亮点</strong>：有哪些值得借鉴的技术决策？</li>
+                </ol>
+            </section>
+
+            <section id="ch2" class="chapter">
+                <h2 class="chapter-title" data-text="第二章：宏观架构">第二章：宏观架构</h2>
+
+                <h3 class="section-title">2.1 五层架构模型</h3>
+                <p>Claude Code 的代码组织遵循清晰的分层设计：</p>
+
+                <div class="ascii-art">
+┌─────────────────────────────────────────────────────┐
+│  入口层 (Entrypoints)                                │
+│  cli.tsx · init.ts · sdk/ · mcp.ts                  │
+├─────────────────────────────────────────────────────┤
+│  核心引擎层 (Core Engine)                            │
+│  QueryEngine.ts · query.ts · context.ts             │
+├─────────────────────────────────────────────────────┤
+│  工具与命令层 (Tools & Commands)                     │
+│  tools/ (41个) · commands/ (~50个) · Tool.ts        │
+├─────────────────────────────────────────────────────┤
+│  服务层 (Services)                                   │
+│  compact/ · permissions/ · mcp/ · bridge/ · tasks/  │
+├─────────────────────────────────────────────────────┤
+│  UI 层 (Terminal UI)                                 │
+│  components/ (~140个) · ink/ · screens/             │
+└─────────────────────────────────────────────────────┘
+                </div>
+
+                <h3 class="section-title">2.2 目录结构与职责</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>目录</th>
+                            <th>大小</th>
+                            <th>核心职责</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>src/components/</code></td>
+                            <td>9.6 MB</td>
+                            <td>Ink/React 终端 UI 组件，含消息气泡、权限弹框、进度条等</td>
+                        </tr>
+                        <tr>
+                            <td><code>src/utils/</code></td>
+                            <td>6.6 MB</td>
+                            <td>共享工具库：权限、Shell 封装、插件系统、Swarm 支持</td>
+                        </tr>
+                        <tr>
+                            <td><code>src/tools/</code></td>
+                            <td>2.7 MB</td>
+                            <td>41 个 Agent 工具实现（Bash、Read、Write、Grep 等）</td>
+                        </tr>
+                        <tr>
+                            <td><code>src/commands/</code></td>
+                            <td>2.5 MB</td>
+                            <td>~50 个斜杠命令（<code>/compact</code>、<code>/memory</code>、<code>/doctor</code> 等）</td>
+                        </tr>
+                        <tr>
+                            <td><code>src/services/</code></td>
+                            <td>1.8 MB</td>
+                            <td>外部集成：API 客户端、MCP、OAuth、LSP、Analytics</td>
+                        </tr>
+                        <tr>
+                            <td><code>src/hooks/</code></td>
+                            <td>1.2 MB</td>
+                            <td>React hooks：状态、权限、键绑定</td>
+                        </tr>
+                        <tr>
+                            <td><code>src/ink/</code></td>
+                            <td>1.0 MB</td>
+                            <td>定制 Ink 渲染器（双向文字、滚动框、备用屏幕）</td>
+                        </tr>
+                        <tr>
+                            <td><code>src/screens/</code></td>
+                            <td>1.0 MB</td>
+                            <td>全屏 TUI 视图：REPL、Doctor、Resume、Compact</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="section-title">2.3 主要数据流</h3>
+                <p>一次完整的用户交互，数据流经以下路径：</p>
+
+                <div class="ascii-art">
+用户键入消息
+    │
+    ▼
+screens/REPL.tsx（UI 捕获输入）
+    │
+    ▼
+QueryEngine.submitMessage()（消息入队）
+    │
+    ├── context.ts（并行组装 system prompt）
+    │     ├── git status / log
+    │     ├── CLAUDE.md 读取
+    │     └── 权限状态检查
+    │
+    ├── Claude API 调用（多种传输层）
+    │     ├── SSE（Server-Sent Events）
+    │     ├── WebSocket（实时双向）
+    │     └── Hybrid（动态切换）
+    │
+    └── 工具调用循环
+          ├── Tool.ts（工具分发）
+          ├── permissions/（权限验证）
+          └── 具体工具执行（Bash、Read、Write...）
+                </div>
+
+                <h3 class="section-title">2.4 Bun 运行时选择</h3>
+                <p>Claude Code 基于 <strong>Bun</strong> 而非 Node.js 构建。这个选择带来了几个关键优势：</p>
+                <ul>
+                    <li><strong>启动性能</strong>：Bun 的冷启动比 Node.js 快约 3-4 倍</li>
+                    <li><strong>内置工具链</strong>：打包、测试、包管理器一体化</li>
+                    <li><strong>TypeScript 原生支持</strong>：无需额外转译步骤</li>
+                    <li><strong>Web API 兼容性</strong>：fetch、WebSocket 等 API 开箱即用</li>
+                </ul>
+
+                <p>从 <code>package.json</code> 可以看出，Claude Code 严重依赖 Bun 的生态系统，这在 CLI 工具中是相对激进但富有前瞻性的技术选择。</p>
+            </section>
+
+            <!-- Placeholder for remaining chapters -->
+            <section id="ch3" class="chapter">
+                <h2 class="chapter-title" data-text="第三章：核心引擎—QueryEngine">第三章：核心引擎—QueryEngine</h2>
+                <p><em>本章节内容正在加载中，完整报告包含 QueryEngine 的完整分析...</em></p>
+            </section>
+
+            <section id="ch4" class="chapter">
+                <h2 class="chapter-title" data-text="第四章：工具系统">第四章：工具系统</h2>
+                <p><em>本章节内容正在加载中，完整报告包含 41 个工具的详细分析...</em></p>
+            </section>
+
+            <section id="ch5" class="chapter">
+                <h2 class="chapter-title" data-text="第五章：多Agent协作—Swarm">第五章：多Agent协作—Swarm</h2>
+                <p><em>本章节内容正在加载中，完整报告包含 Swarm 系统的完整分析...</em></p>
+            </section>
+
+            <section id="ch6" class="chapter">
+                <h2 class="chapter-title" data-text="第六章：工程化亮点">第六章：工程化亮点</h2>
+                <p><em>本章节内容正在加载中，完整报告包含工程化最佳实践...</em></p>
+            </section>
+
+            <section id="ch7" class="chapter">
+                <h2 class="chapter-title" data-text="第七章：总结与启示">第七章：总结与启示</h2>
+                <p><em>本章节内容正在加载中，完整报告包含总结和未来展望...</em></p>
+            </section>
+        </div>
+    </main>
+
+    <!-- Back to top button -->
+    <button class="back-to-top" onclick="scrollToTop()">
+        ↑
+    </button>
+
+    <script>
+        // Initialize highlight.js
+        hljs.highlightAll();
+
+        // Progress bar functionality
+        function updateProgressBar() {
+            const scrollTop = window.pageYOffset;
+            const docHeight = document.body.offsetHeight;
+            const winHeight = window.innerHeight;
+            const scrollPercent = scrollTop / (docHeight - winHeight);
+            const progressBar = document.querySelector('.progress-bar');
+            progressBar.style.transform = `scaleX(${Math.min(scrollPercent, 1)})`;
+        }
+
+        // Navigation active state
+        function updateActiveNavItem() {
+            const sections = document.querySelectorAll('.chapter');
+            const navLinks = document.querySelectorAll('.nav-toc a');
+
+            let currentSection = '';
+            sections.forEach(section => {
+                const rect = section.getBoundingClientRect();
+                if (rect.top <= 100 && rect.bottom >= 100) {
+                    currentSection = section.id;
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('data-target') === currentSection) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        // Back to top button visibility
+        function updateBackToTop() {
+            const backToTop = document.querySelector('.back-to-top');
+            if (window.pageYOffset > 300) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+        }
+
+        // Scroll to top function
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        // Smooth scroll for navigation links
+        document.querySelectorAll('.nav-toc a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href').substring(1);
+                const targetElement = document.getElementById(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Event listeners
+        window.addEventListener('scroll', () => {
+            updateProgressBar();
+            updateActiveNavItem();
+            updateBackToTop();
+        });
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            updateProgressBar();
+            updateActiveNavItem();
+            updateBackToTop();
+        });
+
+        // Add typing effect to main title
+        document.addEventListener('DOMContentLoaded', () => {
+            const title = document.querySelector('.main-title');
+            title.classList.add('typing-effect');
+        });
+
+        // Mobile navigation toggle (if needed)
+        function toggleMobileNav() {
+            const nav = document.querySelector('.nav-container');
+            nav.classList.toggle('open');
+        }
+
+        // Add mobile nav button if on mobile
+        if (window.innerWidth <= 1024) {
+            const mobileNavButton = document.createElement('button');
+            mobileNavButton.innerHTML = '☰';
+            mobileNavButton.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 20px;
+                z-index: 1001;
+                background: var(--text-primary);
+                color: var(--bg-primary);
+                border: none;
+                padding: 10px;
+                border-radius: 5px;
+                font-size: 18px;
+                cursor: pointer;
+                box-shadow: var(--glow-primary);
+            `;
+            mobileNavButton.onclick = toggleMobileNav;
+            document.body.appendChild(mobileNavButton);
+        }
+    </script>
+</body>
+</html>
