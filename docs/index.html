@@ -656,6 +656,7 @@
         .chapter:nth-child(5) { animation-delay: 0.5s; }
         .chapter:nth-child(6) { animation-delay: 0.6s; }
         .chapter:nth-child(7) { animation-delay: 0.7s; }
+        .chapter:nth-child(8) { animation-delay: 0.8s; }
 
         /* Typing Effect */
         .typing-cursor::after {
@@ -712,6 +713,164 @@
             60% { transform: translate(-2px, -2px); }
             80% { transform: translate(-2px, 2px); }
         }
+
+        /* KAIROS Chapter Specific Styles */
+        .comparison-table {
+            margin: 2rem 0;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 1.5rem;
+            border: 1px solid var(--matrix-dim);
+        }
+
+        .comparison-table h4 {
+            color: var(--matrix-bright);
+            margin-bottom: 1rem;
+            font-family: var(--font-mono);
+        }
+
+        .comparison-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--matrix-shadow);
+        }
+
+        .comparison-table th {
+            background: var(--bg-secondary);
+            color: var(--matrix-bright);
+            font-weight: bold;
+            min-width: 120px;
+        }
+
+        .security-layers {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            border: 1px solid var(--matrix-dim);
+        }
+
+        .security-layers .layer {
+            background: var(--bg-code);
+            color: var(--matrix-bright);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            border: 1px solid var(--matrix-medium);
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .security-layers .arrow {
+            color: var(--cyan-electric);
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .innovation-table {
+            width: 100%;
+            margin: 2rem 0;
+            border-collapse: collapse;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--matrix-dim);
+        }
+
+        .innovation-table th,
+        .innovation-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--matrix-shadow);
+        }
+
+        .innovation-table th {
+            background: var(--bg-secondary);
+            color: var(--matrix-bright);
+            font-weight: bold;
+            font-family: var(--font-mono);
+        }
+
+        .innovation-table td {
+            color: var(--text-tertiary);
+        }
+
+        .innovation-table tr:nth-child(even) {
+            background: rgba(0, 255, 65, 0.02);
+        }
+
+        .innovation-table tr:hover {
+            background: rgba(0, 255, 65, 0.05);
+        }
+
+        .risk-assessment {
+            margin: 2rem 0;
+            background: linear-gradient(135deg,
+                rgba(255, 48, 48, 0.1) 0%,
+                rgba(255, 107, 53, 0.05) 100%);
+            border-radius: 8px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 48, 48, 0.3);
+        }
+
+        .risk-assessment h4 {
+            color: var(--red-alert);
+            margin-bottom: 1rem;
+            font-family: var(--font-mono);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .risk-assessment ul {
+            margin: 1rem 0;
+        }
+
+        .risk-assessment li {
+            margin: 0.5rem 0;
+            color: var(--text-tertiary);
+        }
+
+        .risk-assessment code {
+            background: rgba(255, 48, 48, 0.1);
+            border: 1px solid rgba(255, 48, 48, 0.3);
+        }
+
+        /* Mobile responsiveness for new components */
+        @media (max-width: 768px) {
+            .security-layers {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .security-layers .arrow {
+                transform: rotate(90deg);
+            }
+
+            .innovation-table {
+                font-size: 0.9rem;
+            }
+
+            .innovation-table th,
+            .innovation-table td {
+                padding: 0.75rem 0.5rem;
+            }
+
+            .comparison-table table {
+                font-size: 0.9rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -738,7 +897,8 @@
             <li><a href="#ch4" data-target="ch4">第四章: 工具系统</a></li>
             <li><a href="#ch5" data-target="ch5">第五章: 多Agent协作</a></li>
             <li><a href="#ch6" data-target="ch6">第六章: 工程化亮点</a></li>
-            <li><a href="#ch7" data-target="ch7">第七章: 总结与启示</a></li>
+            <li><a href="#ch7" data-target="ch7">第七章: KAIROS 助理架构</a></li>
+            <li><a href="#ch8" data-target="ch8">第八章: 总结与启示</a></li>
         </ul>
     </nav>
 
@@ -1356,9 +1516,173 @@ startKeychainPrefetch()  // 与后续 import 并发执行</code></pre>
 
             <!-- Chapter 7 -->
             <section id="ch7" class="chapter">
-                <h2 class="chapter-title" data-text="第七章：总结与启示">第七章：总结与启示</h2>
+                <h2 class="chapter-title" data-text="第七章：KAIROS 助理架构深度剖析">第七章：KAIROS 助理架构深度剖析</h2>
 
-                <h3 class="section-title">7.1 对 AI Agent 架构设计的启示</h3>
+                <h3 class="section-title">7.1 什么是 KAIROS</h3>
+                <p>在分析 Claude Code 源码时，我们发现了一个名为 <strong>KAIROS</strong> 的神秘架构模块。它不是简单的功能特性，而是整个系统向智能助理演进的核心基础设施。</p>
+
+                <p>KAIROS 代表了从传统 CLI 工具向智能工作伙伴的根本性转变：</p>
+                <ul>
+                    <li><strong>长期运行会话</strong>：突破一次性交互限制</li>
+                    <li><strong>主动式通信</strong>：AI 可以主动推送信息</li>
+                    <li><strong>持久化记忆</strong>：跨会话保持上下文</li>
+                    <li><strong>外部集成</strong>：标准化第三方服务接入</li>
+                </ul>
+
+                <h3 class="section-title">7.2 特性标志架构</h3>
+                <p>KAIROS 采用了精心设计的多层级特性标志体系，既支持整体开关，又允许子功能独立发布：</p>
+
+                <pre><code class="language-typescript">// 主标志 - 控制核心助理功能
+feature('KAIROS')
+
+// 子功能标志 - 允许独立发布和测试
+feature('KAIROS_BRIEF')              // Brief 工具
+feature('KAIROS_DREAM')              // Dream 记忆整理技能
+feature('KAIROS_CHANNELS')           // 频道通知系统
+feature('KAIROS_PUSH_NOTIFICATION')  // 推送通知
+feature('KAIROS_GITHUB_WEBHOOKS')    // GitHub 集成</code></pre>
+
+                <p>这种设计最大的技术优势是 <strong>Build-time Dead Code Elimination</strong>。Bun bundler 可以在编译时完全移除未启用的功能，确保生产包体积最小。</p>
+
+                <h3 class="section-title">7.3 BriefTool - 双向通信桥梁</h3>
+                <p>BriefTool 是 KAIROS 最重要的组件，它解决了传统 CLI 单向输出的根本限制。通过支持状态感知消息和富媒体附件，实现了 AI 与用户的真正双向交流：</p>
+
+                <pre><code class="language-typescript">const inputSchema = z.strictObject({
+  message: z.string()
+    .describe('支持 Markdown 格式的用户消息'),
+  attachments: z.array(z.string()).optional()
+    .describe('可选的文件附件路径...'),
+  status: z.enum(['normal', 'proactive'])
+    .describe("主动推送时使用 'proactive'")
+})</code></pre>
+
+                <h3 class="section-title">7.4 革命性记忆系统</h3>
+                <p>KAIROS 引入了从实时索引到追加式日志的记忆管理模式变革：</p>
+
+                <div class="comparison-table">
+                    <h4>传统模式 vs KAIROS 模式</h4>
+                    <table>
+                        <tr>
+                            <th>传统模式</th>
+                            <td>用户操作 → 立即更新 MEMORY.md → 并发冲突风险</td>
+                        </tr>
+                        <tr>
+                            <th>KAIROS 模式</th>
+                            <td>用户操作 → 追加日志 → 定期整理 → 更新索引</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <p>文件结构设计：</p>
+                <pre><code>&lt;autoMemPath&gt;/
+├── MEMORY.md              # 整理后的知识索引
+├── logs/                  # 原始操作日志
+│   └── 2026/
+│       └── 04/
+│           └── 2026-04-01.md</code></pre>
+
+                <h3 class="section-title">7.5 Channel Notification - 外部集成枢纽</h3>
+                <p>通过 MCP (Model Context Protocol) 实现标准化的外部服务集成，支持 Discord、Slack、SMS 等任意通信渠道：</p>
+
+                <pre><code class="language-typescript">// 消息流设计
+外部服务 → MCP Server → notifications/claude/channel →
+&lt;channel&gt; XML 标签包装 → 消息队列 → Agent 处理 → BriefTool 响应</code></pre>
+
+                <p>安全分层设计确保只有授权服务可以推送消息：</p>
+                <div class="security-layers">
+                    <div class="layer">特性标志</div>
+                    <div class="arrow">→</div>
+                    <div class="layer">Growth Book 门控</div>
+                    <div class="arrow">→</div>
+                    <div class="layer">OAuth 认证</div>
+                    <div class="arrow">→</div>
+                    <div class="layer">组织策略</div>
+                    <div class="arrow">→</div>
+                    <div class="layer">会话参数</div>
+                    <div class="arrow">→</div>
+                    <div class="layer">服务器白名单</div>
+                </div>
+
+                <h3 class="section-title">7.6 企业级任务调度</h3>
+                <p>KAIROS 实现了完整的 Cron 调度系统，支持分布式部署和故障恢复：</p>
+
+                <ul>
+                    <li><strong>标准 Cron 表达式</strong>：灵活的时间配置</li>
+                    <li><strong>文件热重载</strong>：scheduled_tasks.json 实时监听</li>
+                    <li><strong>分布式锁</strong>：防止多实例重复执行</li>
+                    <li><strong>Jitter 配置</strong>：避免系统负载峰值</li>
+                    <li><strong>任务老化</strong>：自动清理过期任务</li>
+                </ul>
+
+                <h3 class="section-title">7.7 架构创新与技术优势</h3>
+                <p>KAIROS 体现了多项重要的技术创新：</p>
+
+                <table class="innovation-table">
+                    <tr>
+                        <th>创新点</th>
+                        <th>技术实现</th>
+                        <th>业务价值</th>
+                    </tr>
+                    <tr>
+                        <td>渐进式 AI 集成</td>
+                        <td>向后兼容的特性标志</td>
+                        <td>平滑的用户体验过渡</td>
+                    </tr>
+                    <tr>
+                        <td>标准化集成协议</td>
+                        <td>MCP (Model Context Protocol)</td>
+                        <td>开放的第三方生态</td>
+                    </tr>
+                    <tr>
+                        <td>分布式友好设计</td>
+                        <td>文件锁 + 状态外置</td>
+                        <td>企业级扩展能力</td>
+                    </tr>
+                    <tr>
+                        <td>隐私优先架构</td>
+                        <td>本地记忆存储</td>
+                        <td>数据安全和用户信任</td>
+                    </tr>
+                </table>
+
+                <h3 class="section-title">7.8 技术债务与风险评估</h3>
+                <p>深入分析也发现了一些需要关注的技术风险：</p>
+
+                <div class="risk-assessment">
+                    <h4>⚠️ 特性标志爆炸</h4>
+                    <p>7 个相关标志组合复杂度高，测试覆盖困难</p>
+
+                    <h4>⚠️ 循环依赖风险</h4>
+                    <pre><code class="language-typescript">// systemPrompt.ts 中的危险模式
+const proactiveModule = feature('KAIROS')
+  ? require('../proactive/index.js')  // 运行时 require
+  : null</code></pre>
+
+                    <h4>⚠️ 缺失关键组件</h4>
+                    <ul>
+                        <li><code>dream.js</code> - 记忆整理技能</li>
+                        <li><code>SendUserFileTool</code> - 文件发送工具</li>
+                        <li><code>PushNotificationTool</code> - 推送通知工具</li>
+                    </ul>
+                </div>
+
+                <h3 class="section-title">7.9 KAIROS 的战略意义</h3>
+                <p>KAIROS 不仅仅是一个技术模块，它代表了 AI 工具发展的重要趋势：</p>
+
+                <ul>
+                    <li><strong>从工具到伙伴</strong>：AI 从被动工具变为主动伙伴</li>
+                    <li><strong>从会话到关系</strong>：建立长期的工作关系而非单次对话</li>
+                    <li><strong>从功能到生态</strong>：通过标准化协议构建开放生态</li>
+                </ul>
+
+                <p>这种设计理念为整个 AI 助手行业树立了新的技术标杆，值得所有相关从业者深入研究和借鉴。</p>
+            </section>
+
+            <!-- Chapter 8 -->
+            <section id="ch8" class="chapter">
+                <h2 class="chapter-title" data-text="第八章：总结与启示">第八章：总结与启示</h2>
+
+                <h3 class="section-title">8.1 对 AI Agent 架构设计的启示</h3>
                 <p>读完这份代码，有几个判断值得记下来。</p>
 
                 <p><strong>异步生成器是 Agent 流式输出的正确抽象。</strong> <code>AsyncGenerator&lt;SDKMessage&gt;</code> 比回调、比事件发射器、比 Promise 链都干净。调用方用 <code>for await...of</code> 消费，可以随时 <code>break</code> 中断，背压（backpressure）天然处理。zoey-ai 目前的 WebSocket 透传方案更底层，如果未来重构可以考虑在服务层引入这个模式。</p>
@@ -1367,7 +1691,7 @@ startKeychainPrefetch()  // 与后续 import 并发执行</code></pre>
 
                 <p><strong>Markdown 即配置的思路值得借鉴。</strong> CLAUDE.md 系统让"给 AI 的指令"变成了可 git 管理、可 code review 的工件，而不是藏在数据库某个字段里的魔法字符串。对于 zoey-ai 这类长期个人 Agent，用户的偏好和背景也可以考虑以类似方式存储。</p>
 
-                <h3 class="section-title">7.2 权限系统值得借鉴之处</h3>
+                <h3 class="section-title">8.2 权限系统值得借鉴之处</h3>
                 <p>Claude Code 的权限架构是这份代码里工程完成度最高的部分，有两点特别值得学习。</p>
 
                 <p><strong>分级授权比二元授权更实用。</strong> 不是"允许/拒绝"两档，而是四档：全自动（<code>bypass</code>）、计划确认（<code>plan</code>）、ML 分类（<code>auto</code>）、逐步确认（<code>default</code>）。用户可以根据信任程度和场景灵活选择。在 CI 环境选 bypass，在生产操作选 default，平时用 auto——同一套代码服务完全不同的安全需求。</p>
@@ -1376,7 +1700,7 @@ startKeychainPrefetch()  // 与后续 import 并发执行</code></pre>
 
                 <p><strong>Pre/Post Hook 是正确的扩展点。</strong> 企业客户有定制权限策略的需求，但不应该 fork 代码。Shell 脚本 hook 是正确答案——标准接口，任何语言实现，不耦合内部实现。这个思路和 git hooks 一脉相承。</p>
 
-                <h3 class="section-title">7.3 最后的判断</h3>
+                <h3 class="section-title">8.3 最后的判断</h3>
                 <p>这份代码回答了一个重要问题：<strong>一个生产级 AI Agent 系统的复杂度应该在哪里？</strong></p>
 
                 <p>Claude Code 的答案是：复杂度应该在<strong>基础设施层</strong>（权限系统、上下文管理、工具接口、进程协调），而不在<strong>业务逻辑层</strong>（每个工具的具体实现）。BashTool 的实现很简单，因为 QueryEngine 帮它处理了流式输出、错误重试、权限审计；WriteFileTool 的实现也很简单，因为 ToolPermissionContext 帮它处理了状态不变性和并发安全。</p>
