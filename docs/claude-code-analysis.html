@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Code 源码深度解读 | Kira Chen</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&family=Fira+Code:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+
+    <!-- Syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+    <style>
+        :root {
+            /* Code Matrix Palette */
+            --bg-void: #000000;
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #111111;
+            --bg-tertiary: #1a1a1a;
+            --bg-code: #0d1117;
+            --bg-highlight: #162329;
+
+            /* Matrix Green Spectrum */
+            --matrix-bright: #00ff41;
+            --matrix-medium: #00d632;
+            --matrix-dim: #00b028;
+            --matrix-dark: #008a1f;
+            --matrix-shadow: #006617;
+
+            /* Accent Colors */
+            --cyan-electric: #00ffff;
+            --orange-neon: #ff6b35;
+            --purple-deep: #6a4c93;
+            --red-alert: #ff3030;
+
+            /* Text Hierarchy */
+            --text-primary: #ffffff;
+            --text-secondary: var(--matrix-bright);
+            --text-tertiary: #cccccc;
+            --text-muted: #999999;
+            --text-dim: #666666;
+
+            /* Typography */
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --font-code: 'Fira Code', 'JetBrains Mono', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg-void);
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        .nav-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--matrix-shadow);
+            padding: 1rem 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            color: var(--matrix-bright);
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: var(--text-tertiary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--matrix-bright);
+        }
+
+        /* Article Header */
+        .article-header {
+            padding: 8rem 0 4rem;
+            text-align: center;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+        }
+
+        .article-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--matrix-bright);
+            text-shadow: 0 0 30px rgba(0, 255, 65, 0.5);
+            margin-bottom: 2rem;
+        }
+
+        .article-meta {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .article-meta strong {
+            color: var(--matrix-medium);
+        }
+
+        /* Main Content */
+        .article-content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            color: var(--matrix-medium);
+            margin: 3rem 0 1.5rem;
+            border-bottom: 2px solid var(--matrix-shadow);
+            padding-bottom: 0.5rem;
+        }
+
+        .section-subtitle {
+            font-size: 1.5rem;
+            color: var(--cyan-electric);
+            margin: 2rem 0 1rem;
+        }
+
+        p {
+            margin-bottom: 1.5rem;
+            color: var(--text-tertiary);
+            line-height: 1.8;
+        }
+
+        /* Code Blocks */
+        pre {
+            background: var(--bg-code);
+            border: 1px solid var(--matrix-shadow);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            overflow-x: auto;
+            font-family: var(--font-code);
+        }
+
+        code {
+            background: var(--bg-tertiary);
+            color: var(--matrix-bright);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-family: var(--font-code);
+            font-size: 0.9em;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            border-radius: 0;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--matrix-shadow);
+        }
+
+        th {
+            background: var(--bg-secondary);
+            color: var(--matrix-bright);
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: rgba(0, 255, 65, 0.05);
+        }
+
+        /* Lists */
+        ul, ol {
+            padding-left: 2rem;
+            margin: 1.5rem 0;
+        }
+
+        li {
+            margin: 0.5rem 0;
+            color: var(--text-tertiary);
+        }
+
+        /* ASCII Art */
+        .ascii-art {
+            background: var(--bg-code);
+            border: 1px solid var(--matrix-dim);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            font-family: var(--font-code);
+            font-size: 0.9rem;
+            color: var(--matrix-bright);
+            white-space: pre;
+            overflow-x: auto;
+        }
+
+        /* Back to Home */
+        .back-home {
+            position: fixed;
+            top: 50%;
+            left: 2rem;
+            transform: translateY(-50%);
+            background: var(--matrix-dark);
+            color: var(--matrix-bright);
+            padding: 1rem;
+            border-radius: 50%;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .back-home:hover {
+            background: var(--matrix-medium);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .article-title {
+                font-size: 2.5rem;
+            }
+
+            .article-content {
+                padding: 2rem 1rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .back-home {
+                left: 1rem;
+                padding: 0.75rem;
+            }
+        }
+
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Highlight current section */
+        .highlight {
+            color: var(--orange-neon);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav-header">
+        <div class="nav-container">
+            <a href="./" class="nav-logo">⚡ Claude Code 内幕</a>
+            <div class="nav-links">
+                <a href="./">首页</a>
+                <a href="./kairos-analysis.html">KAIROS 分析</a>
+                <a href="https://github.com/warren-wupeng/claude-code" target="_blank">源码仓库</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Back to Home Button -->
+    <a href="./" class="back-home" title="返回首页">🏠</a>
+
+    <!-- Article Header -->
+    <header class="article-header">
+        <div class="container">
+            <h1 class="article-title">Claude Code 源码深度解读</h1>
+            <div class="article-meta">
+                <strong>作者：</strong> Kira Chen &nbsp;|&nbsp;
+                <strong>日期：</strong> 2026-03-31 &nbsp;|&nbsp;
+                <strong>字数：</strong> ~7,000 字 &nbsp;|&nbsp;
+                <strong>阅读时间：</strong> 约 25 分钟
+            </div>
+        </div>
+    </header>
+
+    <!-- Article Content -->
+    <main class="article-content">
+        <!-- Introduction -->
+        <section>
+            <p><strong>基于：</strong> <a href="https://github.com/warren-wupeng/claude-code" target="_blank">warren-wupeng/claude-code</a> — Anthropic Claude Code CLI 泄漏源码存档</p>
+        </section>
+
+        <!-- Chapter 1 -->
+        <section>
+            <h2 class="section-title">第一章：背景与概述</h2>
+
+            <h3 class="section-subtitle">1.1 泄漏事件始末</h3>
+            <p>2026 年 3 月 31 日，安全研究员 Chaofan Shou（@Fried_rice）发现 Anthropic 在发布 Claude Code npm 包时，将一个 <code>.map</code>（Source Map）文件意外暴露在公网可访问的 R2 存储桶中。Source Map 是 JavaScript 构建工具生成的调试文件，其中包含从编译产物到原始 TypeScript 源代码的完整映射——这意味着任何人都可以通过这个文件还原出 Claude Code 的全部未混淆源码。</p>
+
+            <p>该事件迅速在开发者社区扩散。warren-wupeng/claude-code 仓库是对这批源码的公开存档，附带了一个由仓库作者额外添加的 MCP 服务器（<code>mcp-server/</code>），使任何 MCP 兼容工具（VS Code Copilot、Claude Desktop 等）都可以将此源码作为知识库进行探索。</p>
+
+            <h3 class="section-subtitle">1.2 代码规模</h3>
+            <table>
+                <tr>
+                    <th>维度</th>
+                    <th>数字</th>
+                </tr>
+                <tr>
+                    <td>总行数</td>
+                    <td>~512,000 行</td>
+                </tr>
+                <tr>
+                    <td>源文件数</td>
+                    <td>~1,913 个</td>
+                </tr>
+                <tr>
+                    <td>主语言</td>
+                    <td>TypeScript（30.3 MB）</td>
+                </tr>
+                <tr>
+                    <td>工具实现</td>
+                    <td>41 个</td>
+                </tr>
+                <tr>
+                    <td>斜杠命令</td>
+                    <td>~50 个</td>
+                </tr>
+                <tr>
+                    <td>UI 组件</td>
+                    <td>~140 个 Ink/React 组件</td>
+                </tr>
+            </table>
+
+            <p>这不是一个玩具项目。从代码量和工程复杂度看，这是一个经过数十人多年迭代、投入大量工程资源的生产级系统。</p>
+
+            <h3 class="section-subtitle">1.3 本文范围</h3>
+            <p>本文聚焦五个核心主题：</p>
+            <ul>
+                <li><strong>宏观架构</strong>：系统是如何组织的？</li>
+                <li><strong>QueryEngine</strong>：LLM 调用的核心循环是什么？</li>
+                <li><strong>工具系统</strong>：41 个工具如何设计和管理？</li>
+                <li><strong>多 Agent 协作</strong>：Swarm 如何实现进程间协调？</li>
+                <li><strong>工程化亮点</strong>：有哪些值得借鉴的技术决策？</li>
+            </ul>
+        </section>
+
+        <!-- Chapter 2 -->
+        <section>
+            <h2 class="section-title">第二章：宏观架构</h2>
+
+            <h3 class="section-subtitle">2.1 五层架构模型</h3>
+            <p>Claude Code 的代码组织遵循清晰的分层设计：</p>
+
+            <div class="ascii-art">┌─────────────────────────────────────────────────────┐
+│  入口层 (Entrypoints)                                │
+│  cli.tsx · init.ts · sdk/ · mcp.ts                  │
+├─────────────────────────────────────────────────────┤
+│  核心引擎层 (Core Engine)                            │
+│  QueryEngine.ts · query.ts · context.ts             │
+├─────────────────────────────────────────────────────┤
+│  工具与命令层 (Tools & Commands)                     │
+│  tools/ (41个) · commands/ (~50个) · Tool.ts        │
+├─────────────────────────────────────────────────────┤
+│  服务层 (Services)                                   │
+│  compact/ · permissions/ · mcp/ · bridge/ · tasks/  │
+├─────────────────────────────────────────────────────┤
+│  UI 层 (Terminal UI)                                 │
+│  components/ (~140个) · ink/ · screens/             │
+└─────────────────────────────────────────────────────┘</div>
+
+            <h3 class="section-subtitle">2.2 目录结构与职责</h3>
+            <table>
+                <tr>
+                    <th>目录</th>
+                    <th>职责</th>
+                    <th>关键文件</th>
+                </tr>
+                <tr>
+                    <td><code>src/entrypoints/</code></td>
+                    <td>多入口启动逻辑</td>
+                    <td>cli.tsx, sdk/, mcp.ts</td>
+                </tr>
+                <tr>
+                    <td><code>src/query/</code></td>
+                    <td>LLM 调用核心</td>
+                    <td>QueryEngine.ts, context.ts</td>
+                </tr>
+                <tr>
+                    <td><code>src/tools/</code></td>
+                    <td>工具实现 (41个)</td>
+                    <td>BashTool, FileEditTool, etc.</td>
+                </tr>
+                <tr>
+                    <td><code>src/services/</code></td>
+                    <td>基础设施服务</td>
+                    <td>permissions/, mcp/, bridge/</td>
+                </tr>
+                <tr>
+                    <td><code>src/components/</code></td>
+                    <td>Terminal UI 组件</td>
+                    <td>Messages.tsx, PromptInput.tsx</td>
+                </tr>
+            </table>
+
+            <p><strong>设计原则</strong>：每一层只依赖下层，避免循环依赖。工具层可以调用服务层，但服务层不能直接调用具体工具。</p>
+        </section>
+
+        <!-- Chapter 3 -->
+        <section>
+            <h2 class="section-title">第三章：核心引擎——QueryEngine</h2>
+
+            <h3 class="section-subtitle">3.1 LLM 调用的核心循环</h3>
+            <p>QueryEngine 是整个系统的心脏，负责协调 LLM 调用、工具执行和上下文管理：</p>
+
+            <div class="ascii-art">用户输入
+    ▼
+<span class="highlight">QueryEngine.submitMessage()</span>（消息入队）
+    │
+    ├── <span class="highlight">context.ts</span>（并行组装 system prompt）
+    │     ├── git status / log
+    │     ├── CLAUDE.md 文件（所有父目录）
+    │     └── MEMORY.md（持久记忆）
+    │
+    ├── <span class="highlight">query.ts</span>（调用 Anthropic API，流式）
+    │
+    └── <span class="highlight">工具调用循环</span>
+          ├── Tool.checkPermissions()
+          ├── permissions.ts（全局权限决策）
+          ├── Pre-tool hooks
+          ├── Tool.call()（执行工具）
+          ├── Post-tool hooks
+          └── 追加 tool_result，继续循环
+    │
+    ▼
+<span class="highlight">SDKMessage 流</span>（yield 给 UI / SDK 消费者）</div>
+
+            <h3 class="section-subtitle">3.2 上下文压缩策略</h3>
+            <p>Claude Code 实现了多层级的上下文管理：</p>
+            <ul>
+                <li><strong>智能截断</strong>：优先保留最近的工具调用和结果</li>
+                <li><strong>摘要压缩</strong>：使用 LLM 生成历史对话摘要</li>
+                <li><strong>记忆外置</strong>：将长期信息写入 MEMORY.md</li>
+                <li><strong>动态加载</strong>：根据当前任务动态选择相关上下文</li>
+            </ul>
+
+            <h3 class="section-subtitle">3.3 CLAUDE.md 记忆系统</h3>
+            <p>系统会递归搜索当前目录及所有父目录的 <code>CLAUDE.md</code> 文件，将其内容注入到 system prompt 中。这形成了一个分层的项目配置系统：</p>
+
+            <pre><code>~/projects/my-app/CLAUDE.md           # 项目特定配置
+~/projects/CLAUDE.md                  # 项目组通用配置
+~/CLAUDE.md                          # 个人全局配置</code></pre>
+
+            <p>每个层级的配置都会被包含，形成完整的上下文。</p>
+        </section>
+
+        <!-- Chapter 4 -->
+        <section>
+            <h2 class="section-title">第四章：工具系统</h2>
+
+            <h3 class="section-subtitle">4.1 工具接口设计</h3>
+            <p>所有工具都实现统一的 <code>Tool&lt;Input, Output&gt;</code> 接口：</p>
+
+            <pre><code class="language-typescript">interface Tool&lt;TInput, TOutput&gt; {
+  name: string
+  inputSchema: ZodSchema&lt;TInput&gt;
+  outputSchema: ZodSchema&lt;TOutput&gt;
+
+  call(input: TInput, context: ToolUseContext): Promise&lt;TOutput&gt;
+  checkPermissions(input: TInput, context: ToolUseContext): PermissionResult
+  isEnabled(): boolean
+  isConcurrencySafe(): boolean
+  isReadOnly(): boolean
+}</code></pre>
+
+            <p>这种设计的优势：</p>
+            <ul>
+                <li><strong>类型安全</strong>：输入输出都有严格的 Zod schema 验证</li>
+                <li><strong>权限隔离</strong>：每个工具独立检查权限</li>
+                <li><strong>并发控制</strong>：明确标识哪些工具可以并发执行</li>
+                <li><strong>功能标识</strong>：区分只读工具和修改性工具</li>
+            </ul>
+
+            <h3 class="section-subtitle">4.2 权限系统的双门控</h3>
+            <p>Claude Code 实现了工具级 + 全局级的双层权限控制：</p>
+
+            <ol>
+                <li><strong>工具级权限</strong>：每个工具的 <code>checkPermissions()</code> 方法</li>
+                <li><strong>全局权限</strong>：<code>permissions.ts</code> 的统一决策引擎</li>
+            </ol>
+
+            <p>权限决策流程：</p>
+            <pre><code>用户调用工具 → 工具.checkPermissions() → 全局 permissions.ts → 执行决策</code></pre>
+
+            <h3 class="section-subtitle">4.3 41个工具的分类</h3>
+            <table>
+                <tr>
+                    <th>类别</th>
+                    <th>工具名</th>
+                    <th>主要功能</th>
+                </tr>
+                <tr>
+                    <td>文件操作</td>
+                    <td>FileReadTool, FileWriteTool, FileEditTool</td>
+                    <td>基础文件 CRUD</td>
+                </tr>
+                <tr>
+                    <td>系统交互</td>
+                    <td>BashTool, PowerShellTool</td>
+                    <td>命令行执行</td>
+                </tr>
+                <tr>
+                    <td>代码搜索</td>
+                    <td>GrepTool, GlobTool</td>
+                    <td>文本搜索和文件匹配</td>
+                </tr>
+                <tr>
+                    <td>协作功能</td>
+                    <td>AgentTool, BriefTool</td>
+                    <td>多 Agent 协调</td>
+                </tr>
+                <tr>
+                    <td>开发工具</td>
+                    <td>LSPTool, NotebookEditTool</td>
+                    <td>IDE 集成和 Jupyter 支持</td>
+                </tr>
+            </table>
+
+            <p>每个工具都是独立的模块，可以单独测试、独立部署。</p>
+        </section>
+
+        <!-- Chapter 5 -->
+        <section>
+            <h2 class="section-title">第五章：多Agent协作——Swarm</h2>
+
+            <h3 class="section-subtitle">5.1 进程隔离模型</h3>
+            <p>Claude Code 通过 Swarm 实现多 Agent 协作，每个子 Agent 在独立进程中运行：</p>
+
+            <div class="ascii-art">主进程 (Main Agent)
+    │
+    ├── 子进程 A（专业Agent：前端开发）
+    ├── 子进程 B（专业Agent：后端API）
+    └── 子进程 C（专业Agent：数据分析）
+
+每个子进程：
+- 独立的内存空间
+- 独立的工具权限
+- 独立的上下文管理</div>
+
+            <h3 class="section-subtitle">5.2 Mailbox 通信机制</h3>
+            <p>进程间通信通过"信箱"模式实现：</p>
+            <ul>
+                <li><strong>发送消息</strong>：Agent A 写入共享的消息队列</li>
+                <li><strong>接收消息</strong>：Agent B 轮询读取自己的信箱</li>
+                <li><strong>消息格式</strong>：标准化的 JSON 格式</li>
+                <li><strong>持久化</strong>：消息存储在文件系统中，支持崩溃恢复</li>
+            </ul>
+
+            <h3 class="section-subtitle">5.3 任务状态机</h3>
+            <p>每个 Agent 任务都有明确的状态流转：</p>
+            <pre><code>pending → running → completed
+   │         │         │
+   │         └─→ failed │
+   └─────────────────→ cancelled</code></pre>
+
+            <p>状态变化会触发相应的事件回调，支持复杂的工作流编排。</p>
+        </section>
+
+        <!-- Chapter 6 -->
+        <section>
+            <h2 class="section-title">第六章：工程化亮点</h2>
+
+            <h3 class="section-subtitle">6.1 Feature Flag 构建系统</h3>
+            <p>Claude Code 使用 Bun 的 feature flag 实现条件编译：</p>
+
+            <pre><code class="language-typescript">// 只有启用 PROACTIVE 特性时才编译这部分代码
+const SleepTool = feature('PROACTIVE')
+  ? require('./tools/SleepTool.js').SleepTool
+  : null</code></pre>
+
+            <p>优势：</p>
+            <ul>
+                <li><strong>Dead Code Elimination</strong>：未启用的功能完全不会打包</li>
+                <li><strong>渐进发布</strong>：新功能可以逐步开放给不同用户群体</li>
+                <li><strong>A/B 测试</strong>：支持实验性功能的灰度发布</li>
+            </ul>
+
+            <h3 class="section-subtitle">6.2 启动优化</h3>
+            <p>系统采用多项技术优化启动速度：</p>
+            <ul>
+                <li><strong>懒加载</strong>：工具和服务按需加载</li>
+                <li><strong>并行初始化</strong>：上下文组装和权限检查并发执行</li>
+                <li><strong>缓存机制</strong>：频繁访问的配置和元数据缓存在内存中</li>
+                <li><strong>预编译</strong>：TypeScript 编译结果缓存</li>
+            </ul>
+
+            <h3 class="section-subtitle">6.3 TypeScript 类型系统亮点</h3>
+            <p>代码中有一些精妙的 TypeScript 类型设计：</p>
+
+            <pre><code class="language-typescript">// 条件类型保留字面量类型
+type BuiltTool&lt;D&gt; = {
+  [K in keyof (D & TOOL_DEFAULTS)]:
+    (D & TOOL_DEFAULTS)[K] extends infer V
+      ? V extends boolean
+        ? V
+        : V extends string
+        ? V
+        : (D & TOOL_DEFAULTS)[K]
+      : never
+}</code></pre>
+
+            <p><code>buildTool()</code> 的返回类型是 <code>BuiltTool&lt;D&gt;</code>，用条件类型在 <code>D</code> 和 <code>TOOL_DEFAULTS</code> 的展开上保留了每个字段的字面量类型，而不是退化为宽泛的 <code>boolean</code> 或 <code>string</code>。这使得 <code>isConcurrencySafe: true</code> 在类型层面是 <code>true</code> 而非 <code>boolean</code>，下游代码可以依赖这个精确信息。</p>
+        </section>
+
+        <!-- Chapter 7 -->
+        <section>
+            <h2 class="section-title">第七章：总结与启示</h2>
+
+            <h3 class="section-subtitle">7.1 对 AI Agent 架构设计的启示</h3>
+            <p>读完这份代码，有几个判断值得记下来。</p>
+
+            <p><strong>异步生成器是 Agent 流式输出的正确抽象。</strong> <code>AsyncGenerator&lt;SDKMessage&gt;</code> 比回调、比事件发射器、比 Promise 链都干净。调用方用 <code>for await...of</code> 消费，可以随时 <code>break</code> 中断，背压（backpressure）天然处理。zoey-ai 目前的 WebSocket 透传方案更底层，如果未来重构可以考虑在服务层引入这个模式。</p>
+
+            <p><strong>工具系统的关键是接口统一而非实现统一。</strong> 41 个工具行为各异，但都实现同一个 <code>Tool&lt;Input, Output&gt;</code> 接口。QueryEngine 不需要知道 BashTool 怎么执行命令，只需要知道它有 <code>call()</code>、<code>checkPermissions()</code>、<code>renderToolUseMessage()</code>。这是真正的开闭原则——新增工具不修改引擎。</p>
+
+            <h3 class="section-subtitle">7.2 权限系统值得借鉴之处</h3>
+            <p>Claude Code 的权限架构是这份代码里工程完成度最高的部分，有两点特别值得学习。</p>
+
+            <p><strong>双层门控而非单一检查点。</strong> 工具级 + 全局级权限让系统既灵活又安全。工具可以基于输入内容做精细判断（比如 BashTool 检查命令是否包含 <code>rm -rf</code>），全局层面可以做统一的策略控制（比如生产环境禁止所有文件写入）。</p>
+
+            <p><strong>权限即代码，而非配置。</strong> 每个权限检查都是 TypeScript 函数，可以单元测试、可以版本控制、可以 code review。相比基于 YAML 或 JSON 的权限配置，代码形式的权限更容易维护和调试。</p>
+
+            <h3 class="section-subtitle">7.3 最后的判断</h3>
+            <p>这份代码回答了一个重要问题：<strong>一个生产级 AI Agent 系统的复杂度应该在哪里？</strong></p>
+
+            <p>答案是：复杂度应该在架构和工程上，而不是在算法和模型上。Claude Code 没有自研 LLM，没有复杂的 RAG 算法，没有花哨的 prompt engineering。它的价值在于把"AI 调用工具"这件事做到了工程化、产品化、企业化。</p>
+
+            <p>51.2 万行代码，大部分都在解决这些"无聊"的工程问题：权限管理、错误处理、并发控制、状态管理、UI 渲染、性能优化。但正是这些"无聊"的代码，构成了一个真正可用的 AI 工具产品。</p>
+
+            <p><strong>这或许就是 AI 工程化的本质：不是让 AI 更聪明，而是让 AI 更可靠。</strong></p>
+        </section>
+
+        <!-- Conclusion -->
+        <section style="margin-top: 4rem; padding-top: 2rem; border-top: 2px solid var(--matrix-shadow);">
+            <p><em>本分析基于 Anthropic Claude Code 的泄漏源码，仅用于技术研究和学习目的。所有发现和观点仅代表分析者个人理解，不构成对 Anthropic 官方架构的确认。</em></p>
+
+            <p style="margin-top: 2rem; text-align: center;">
+                <strong>📖 想了解更多？</strong><br>
+                <a href="./kairos-analysis.html" style="color: var(--matrix-medium);">阅读 KAIROS 助理架构深度分析 →</a>
+            </p>
+        </section>
+    </main>
+
+    <!-- JavaScript -->
+    <script>
+        // Syntax highlighting
+        hljs.highlightAll();
+
+        // Smooth scrolling for navigation
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
