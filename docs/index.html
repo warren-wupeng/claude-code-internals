@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Claude Code 源码深度解读 | Kira Chen</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Source+Code+Pro:wght@300;400;500;700&family=Inter+Tight:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&family=Fira+Code:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
 
     <!-- Syntax highlighting -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
@@ -16,43 +17,42 @@
 
     <style>
         :root {
-            /* Neo-Terminal Color Palette */
-            --bg-primary: #0a0e1a;
-            --bg-secondary: #0f1420;
-            --bg-tertiary: #1a1f2e;
+            /* Code Matrix Palette */
+            --bg-void: #000000;
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #111111;
+            --bg-tertiary: #1a1a1a;
             --bg-code: #0d1117;
+            --bg-highlight: #162329;
 
-            --text-primary: #00ff88;
-            --text-secondary: #39ff14;
-            --text-muted: #4ade80;
-            --text-dim: #6b7280;
-            --text-white: #f0f4f8;
+            /* Matrix Green Spectrum */
+            --matrix-bright: #00ff41;
+            --matrix-medium: #00d632;
+            --matrix-dim: #00b028;
+            --matrix-dark: #008a1f;
+            --matrix-shadow: #006617;
 
-            --accent-cyan: #00f5ff;
-            --accent-purple: #8b5cf6;
-            --accent-orange: #ff8c00;
-            --accent-pink: #ff00ff;
+            /* Accent Colors */
+            --cyan-electric: #00ffff;
+            --orange-neon: #ff6b35;
+            --purple-deep: #6a4c93;
+            --red-alert: #ff3030;
 
-            --border: #1f2937;
-            --border-accent: #00ff88;
+            /* Text Hierarchy */
+            --text-primary: #ffffff;
+            --text-secondary: var(--matrix-bright);
+            --text-tertiary: #cccccc;
+            --text-muted: #999999;
+            --text-dim: #666666;
 
             /* Typography */
-            --font-display: 'Orbitron', monospace;
-            --font-body: 'Inter Tight', sans-serif;
-            --font-mono: 'Source Code Pro', monospace;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --font-code: 'Fira Code', 'JetBrains Mono', monospace;
 
-            /* Spacing */
-            --spacing-xs: 0.25rem;
-            --spacing-sm: 0.5rem;
-            --spacing-md: 1rem;
-            --spacing-lg: 1.5rem;
-            --spacing-xl: 2rem;
-            --spacing-2xl: 3rem;
-
-            /* Shadows & Effects */
-            --glow-primary: 0 0 20px rgba(0, 255, 136, 0.3);
-            --glow-accent: 0 0 30px rgba(0, 245, 255, 0.2);
-            --shadow-deep: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+            /* Effects */
+            --glow-matrix: 0 0 20px rgba(0, 255, 65, 0.4);
+            --glow-cyan: 0 0 15px rgba(0, 255, 255, 0.3);
+            --shadow-deep: 0 25px 50px -12px rgba(0, 0, 0, 0.9);
         }
 
         * {
@@ -62,23 +62,52 @@
         }
 
         body {
-            font-family: var(--font-body);
-            background: var(--bg-primary);
-            color: var(--text-white);
-            line-height: 1.7;
-            font-size: 16px;
+            font-family: var(--font-mono);
+            background: var(--bg-void);
+            color: var(--text-primary);
+            line-height: 1.6;
+            font-size: 14px;
+            font-weight: 400;
             overflow-x: hidden;
 
-            /* Animated background grid */
+            /* Matrix Rain Background */
             background-image:
-                radial-gradient(circle at 20% 50%, rgba(0, 255, 136, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(0, 245, 255, 0.05) 0%, transparent 50%),
-                linear-gradient(90deg, transparent 98%, rgba(0, 255, 136, 0.03) 100%);
+                radial-gradient(circle at 25% 25%, rgba(0, 255, 65, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(0, 255, 255, 0.02) 0%, transparent 50%),
+                linear-gradient(180deg, transparent 0%, rgba(0, 255, 65, 0.01) 50%, transparent 100%);
         }
 
-        /* Custom scrollbar */
+        /* Matrix Rain Animation */
+        .matrix-rain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.1;
+        }
+
+        .matrix-column {
+            position: absolute;
+            top: -100px;
+            color: var(--matrix-bright);
+            font-family: var(--font-mono);
+            font-size: 12px;
+            white-space: pre;
+            animation: matrix-fall linear infinite;
+        }
+
+        @keyframes matrix-fall {
+            to {
+                transform: translateY(100vh);
+            }
+        }
+
+        /* Custom Scrollbar */
         ::-webkit-scrollbar {
-            width: 8px;
+            width: 6px;
         }
 
         ::-webkit-scrollbar-track {
@@ -86,24 +115,28 @@
         }
 
         ::-webkit-scrollbar-thumb {
-            background: var(--accent-cyan);
-            border-radius: 4px;
-            box-shadow: var(--glow-accent);
+            background: var(--matrix-bright);
+            border-radius: 3px;
+            box-shadow: var(--glow-matrix);
         }
 
-        /* Progress bar */
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--cyan-electric);
+        }
+
+        /* Progress Bar */
         .progress-bar {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            height: 3px;
+            height: 2px;
             z-index: 1000;
-            background: linear-gradient(90deg, var(--text-primary), var(--accent-cyan));
+            background: linear-gradient(90deg, var(--matrix-bright), var(--cyan-electric));
             transform-origin: left;
             transform: scaleX(0);
             transition: transform 0.1s ease-out;
-            box-shadow: var(--glow-primary);
+            box-shadow: var(--glow-matrix);
         }
 
         /* Navigation */
@@ -111,37 +144,36 @@
             position: fixed;
             left: 0;
             top: 0;
-            width: 280px;
+            width: 320px;
             height: 100vh;
-            background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
-            border-right: 2px solid var(--border-accent);
-            padding: var(--spacing-xl);
+            background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            border-right: 1px solid var(--matrix-dark);
+            padding: 2rem;
             z-index: 100;
             box-shadow: var(--shadow-deep);
-
-            /* Cyber grid overlay */
-            background-image:
-                linear-gradient(45deg, transparent 48%, rgba(0, 255, 136, 0.02) 49%, rgba(0, 255, 136, 0.02) 51%, transparent 52%);
+            overflow-y: auto;
         }
 
         .nav-header {
-            margin-bottom: var(--spacing-2xl);
+            margin-bottom: 3rem;
+            text-align: center;
         }
 
         .nav-title {
-            font-family: var(--font-display);
-            font-size: 1.5rem;
-            font-weight: 900;
-            color: var(--text-primary);
-            text-shadow: var(--glow-primary);
-            margin-bottom: var(--spacing-sm);
-            letter-spacing: 0.02em;
+            font-family: var(--font-mono);
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--matrix-bright);
+            text-shadow: var(--glow-matrix);
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.1em;
         }
 
         .nav-subtitle {
-            font-size: 0.85rem;
-            color: var(--text-dim);
+            font-size: 0.8rem;
+            color: var(--text-muted);
             font-weight: 300;
+            letter-spacing: 0.05em;
         }
 
         .nav-toc {
@@ -149,47 +181,51 @@
         }
 
         .nav-toc li {
-            margin-bottom: var(--spacing-sm);
+            margin-bottom: 0.75rem;
         }
 
         .nav-toc a {
             display: block;
-            color: var(--text-muted);
+            color: var(--text-tertiary);
             text-decoration: none;
-            padding: var(--spacing-sm) var(--spacing-md);
-            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            border-radius: 4px;
             font-weight: 400;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border-left: 3px solid transparent;
+            border-left: 2px solid transparent;
+            letter-spacing: 0.02em;
         }
 
         .nav-toc a:hover {
-            background: rgba(0, 255, 136, 0.1);
-            color: var(--text-primary);
-            border-left-color: var(--text-primary);
+            background: rgba(0, 255, 65, 0.05);
+            color: var(--matrix-bright);
+            border-left-color: var(--matrix-bright);
             transform: translateX(4px);
-            box-shadow: var(--glow-primary);
+            box-shadow: var(--glow-matrix);
         }
 
         .nav-toc a.active {
-            background: rgba(0, 255, 136, 0.15);
-            color: var(--text-primary);
-            border-left-color: var(--text-primary);
+            background: rgba(0, 255, 65, 0.1);
+            color: var(--matrix-bright);
+            border-left-color: var(--matrix-bright);
             font-weight: 600;
-            box-shadow: var(--glow-primary);
+            box-shadow: var(--glow-matrix);
         }
 
-        /* Main content */
+        /* Main Container */
         .main-container {
-            margin-left: 280px;
+            margin-left: 320px;
             min-height: 100vh;
+            position: relative;
+            z-index: 10;
         }
 
+        /* Header */
         .header {
-            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
-            padding: var(--spacing-2xl);
-            border-bottom: 2px solid var(--border);
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            padding: 4rem 3rem;
+            border-bottom: 1px solid var(--matrix-dark);
             position: relative;
             overflow: hidden;
         }
@@ -202,244 +238,283 @@
             right: 0;
             bottom: 0;
             background:
-                radial-gradient(circle at 30% 40%, rgba(0, 255, 136, 0.08) 0%, transparent 60%),
-                radial-gradient(circle at 70% 60%, rgba(0, 245, 255, 0.05) 0%, transparent 60%);
+                radial-gradient(circle at 30% 40%, rgba(0, 255, 65, 0.05) 0%, transparent 60%),
+                radial-gradient(circle at 70% 60%, rgba(0, 255, 255, 0.03) 0%, transparent 60%);
             pointer-events: none;
         }
 
         .header-content {
-            max-width: 900px;
+            max-width: 1000px;
             position: relative;
             z-index: 1;
         }
 
         .main-title {
-            font-family: var(--font-display);
-            font-size: clamp(2.5rem, 5vw, 4rem);
-            font-weight: 900;
-            color: var(--text-primary);
-            text-shadow: var(--glow-primary);
-            margin-bottom: var(--spacing-md);
+            font-family: var(--font-mono);
+            font-size: clamp(2.5rem, 5vw, 4.5rem);
+            font-weight: 800;
+            color: var(--matrix-bright);
+            text-shadow: var(--glow-matrix);
+            margin-bottom: 1rem;
             letter-spacing: -0.02em;
             line-height: 1.1;
         }
 
         .subtitle {
-            font-size: 1.25rem;
-            color: var(--text-dim);
+            font-size: 1.2rem;
+            color: var(--text-muted);
             font-weight: 300;
-            margin-bottom: var(--spacing-xl);
+            margin-bottom: 2rem;
+            letter-spacing: 0.02em;
         }
 
         .meta-info {
             display: flex;
-            gap: var(--spacing-lg);
+            gap: 2rem;
             flex-wrap: wrap;
+            align-items: center;
         }
 
         .meta-item {
             display: flex;
             align-items: center;
-            gap: var(--spacing-sm);
-            font-size: 0.9rem;
-            color: var(--text-muted);
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-tertiary);
+            padding: 0.5rem 1rem;
+            background: rgba(0, 255, 65, 0.05);
+            border-radius: 20px;
+            border: 1px solid rgba(0, 255, 65, 0.1);
         }
 
         .meta-icon {
             font-size: 1rem;
-            color: var(--accent-cyan);
+            color: var(--cyan-electric);
         }
 
+        /* Content */
         .content {
-            max-width: 900px;
+            max-width: 1000px;
             margin: 0 auto;
-            padding: var(--spacing-2xl);
+            padding: 3rem;
         }
 
-        /* Typography styles */
+        /* Chapter Styles */
         .chapter {
-            margin-bottom: var(--spacing-2xl);
-            scroll-margin-top: 100px;
+            margin-bottom: 4rem;
+            scroll-margin-top: 120px;
         }
 
         .chapter-title {
-            font-family: var(--font-display);
+            font-family: var(--font-mono);
             font-size: 2.5rem;
             font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: var(--spacing-xl);
-            text-shadow: var(--glow-primary);
+            color: var(--matrix-bright);
+            margin-bottom: 2rem;
+            text-shadow: var(--glow-matrix);
             position: relative;
+            letter-spacing: 0.02em;
         }
 
         .chapter-title::before {
             content: '';
             position: absolute;
-            left: -40px;
+            left: -30px;
             top: 50%;
-            width: 4px;
+            width: 3px;
             height: 60%;
-            background: linear-gradient(180deg, var(--text-primary), var(--accent-cyan));
+            background: linear-gradient(180deg, var(--matrix-bright), var(--cyan-electric));
             transform: translateY(-50%);
             border-radius: 2px;
-            box-shadow: var(--glow-primary);
+            box-shadow: var(--glow-matrix);
         }
 
         .section-title {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: 600;
-            color: var(--text-secondary);
-            margin: var(--spacing-xl) 0 var(--spacing-lg);
-            border-bottom: 1px solid var(--border);
-            padding-bottom: var(--spacing-sm);
+            color: var(--cyan-electric);
+            margin: 2.5rem 0 1.5rem;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+            padding-bottom: 0.5rem;
         }
 
         .subsection-title {
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             font-weight: 500;
-            color: var(--accent-cyan);
-            margin: var(--spacing-lg) 0 var(--spacing-md);
+            color: var(--text-secondary);
+            margin: 2rem 0 1rem;
         }
 
         p {
-            margin-bottom: var(--spacing-md);
-            color: var(--text-white);
+            margin-bottom: 1.2rem;
+            color: var(--text-primary);
             line-height: 1.8;
+            font-weight: 300;
         }
 
-        /* Code and pre styles */
+        /* Code Blocks */
         pre {
             background: var(--bg-code);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: var(--spacing-lg);
-            margin: var(--spacing-lg) 0;
+            border: 1px solid var(--matrix-dark);
+            border-radius: 6px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
             overflow-x: auto;
-            font-family: var(--font-mono);
-            font-size: 0.9rem;
+            font-family: var(--font-code);
+            font-size: 0.85rem;
             line-height: 1.6;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        pre::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--matrix-bright), transparent);
         }
 
         code {
-            font-family: var(--font-mono);
-            background: rgba(0, 255, 136, 0.1);
-            color: var(--text-primary);
-            padding: 0.2em 0.4em;
+            font-family: var(--font-code);
+            background: rgba(0, 255, 65, 0.1);
+            color: var(--matrix-bright);
+            padding: 0.15em 0.4em;
             border-radius: 3px;
             font-size: 0.9em;
+            font-weight: 500;
         }
 
         pre code {
             background: none;
             padding: 0;
             color: inherit;
+            font-weight: 400;
         }
 
-        /* ASCII Art styling */
+        /* ASCII Art - Fixed Formatting */
         .ascii-art {
             background: var(--bg-code);
-            border: 2px solid var(--border-accent);
+            border: 2px solid var(--matrix-bright);
             border-radius: 8px;
-            padding: var(--spacing-lg);
-            margin: var(--spacing-xl) 0;
+            padding: 1.5rem;
+            margin: 2rem 0;
             font-family: var(--font-mono);
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             line-height: 1.2;
-            color: var(--text-primary);
-            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+            color: var(--matrix-bright);
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
             overflow-x: auto;
-            box-shadow: var(--glow-primary);
+            box-shadow: var(--glow-matrix);
+            white-space: pre;
+            font-weight: 400;
         }
 
         /* Tables */
+        .table-container {
+            overflow-x: auto;
+            margin: 2rem 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: var(--spacing-xl) 0;
             background: var(--bg-secondary);
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            font-size: 0.85rem;
         }
 
         th {
             background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary));
-            color: var(--text-primary);
+            color: var(--matrix-bright);
             font-weight: 600;
-            font-size: 0.95rem;
-            padding: var(--spacing-md);
+            padding: 1rem;
             text-align: left;
-            border-bottom: 2px solid var(--border-accent);
+            border-bottom: 2px solid var(--matrix-dark);
+            font-family: var(--font-mono);
         }
 
         td {
-            padding: var(--spacing-md);
-            border-bottom: 1px solid var(--border);
-            color: var(--text-white);
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(0, 255, 65, 0.1);
+            color: var(--text-primary);
+            font-weight: 300;
         }
 
         tr:nth-child(even) td {
-            background: rgba(0, 255, 136, 0.02);
+            background: rgba(0, 255, 65, 0.02);
         }
 
         tr:hover td {
-            background: rgba(0, 255, 136, 0.05);
+            background: rgba(0, 255, 65, 0.05);
         }
 
         /* Lists */
         ul, ol {
-            margin: var(--spacing-md) 0;
-            padding-left: var(--spacing-xl);
+            margin: 1rem 0;
+            padding-left: 2rem;
         }
 
         li {
-            margin-bottom: var(--spacing-sm);
-            color: var(--text-white);
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            font-weight: 300;
+        }
+
+        li strong {
+            color: var(--matrix-bright);
+            font-weight: 600;
         }
 
         /* Links */
         a {
-            color: var(--accent-cyan);
+            color: var(--cyan-electric);
             text-decoration: none;
             transition: all 0.2s ease;
+            border-bottom: 1px solid transparent;
         }
 
         a:hover {
-            color: var(--text-primary);
-            text-shadow: var(--glow-primary);
+            color: var(--matrix-bright);
+            text-shadow: var(--glow-matrix);
+            border-bottom-color: var(--matrix-bright);
         }
 
         /* Blockquotes */
         blockquote {
-            border-left: 4px solid var(--text-primary);
-            background: rgba(0, 255, 136, 0.05);
-            padding: var(--spacing-md) var(--spacing-lg);
-            margin: var(--spacing-lg) 0;
-            border-radius: 0 8px 8px 0;
+            border-left: 4px solid var(--matrix-bright);
+            background: rgba(0, 255, 65, 0.05);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 6px 6px 0;
             font-style: italic;
-            color: var(--text-muted);
-            box-shadow: var(--glow-primary);
+            color: var(--text-tertiary);
+            box-shadow: var(--glow-matrix);
         }
 
-        /* Back to top button */
+        /* Back to Top Button */
         .back-to-top {
             position: fixed;
             bottom: 30px;
             right: 30px;
             width: 50px;
             height: 50px;
-            background: linear-gradient(135deg, var(--text-primary), var(--accent-cyan));
+            background: linear-gradient(135deg, var(--matrix-bright), var(--cyan-electric));
             border: none;
             border-radius: 50%;
-            color: var(--bg-primary);
+            color: var(--bg-void);
             font-size: 1.2rem;
+            font-weight: 700;
             cursor: pointer;
             opacity: 0;
             transform: translateY(20px);
             transition: all 0.3s ease;
-            box-shadow: var(--glow-primary);
+            box-shadow: var(--glow-matrix);
             z-index: 1000;
+            font-family: var(--font-mono);
         }
 
         .back-to-top.visible {
@@ -448,11 +523,45 @@
         }
 
         .back-to-top:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--glow-accent);
+            transform: translateY(-5px) scale(1.1);
+            box-shadow: var(--glow-cyan);
         }
 
-        /* Responsive design */
+        /* Data Flow Diagram */
+        .data-flow {
+            background: var(--bg-code);
+            border: 1px solid var(--matrix-dark);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            line-height: 1.4;
+            color: var(--text-tertiary);
+            overflow-x: auto;
+            white-space: pre;
+        }
+
+        .data-flow .highlight {
+            color: var(--matrix-bright);
+            font-weight: 600;
+        }
+
+        .data-flow .arrow {
+            color: var(--cyan-electric);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .nav-container {
+                width: 280px;
+            }
+
+            .main-container {
+                margin-left: 280px;
+            }
+        }
+
         @media (max-width: 1024px) {
             .nav-container {
                 transform: translateX(-100%);
@@ -468,22 +577,27 @@
             }
 
             .content {
-                padding: var(--spacing-lg);
+                padding: 2rem;
+            }
+
+            .mobile-nav-toggle {
+                display: block !important;
             }
         }
 
         @media (max-width: 768px) {
             .header {
-                padding: var(--spacing-lg);
+                padding: 3rem 2rem;
             }
 
             .main-title {
-                font-size: 2rem;
+                font-size: 2.5rem;
             }
 
             .meta-info {
                 flex-direction: column;
-                gap: var(--spacing-sm);
+                gap: 1rem;
+                align-items: flex-start;
             }
 
             .chapter-title {
@@ -493,6 +607,29 @@
             .chapter-title::before {
                 left: -20px;
             }
+
+            .content {
+                padding: 1.5rem;
+            }
+        }
+
+        /* Mobile Navigation Toggle */
+        .mobile-nav-toggle {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            background: var(--matrix-bright);
+            color: var(--bg-void);
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: var(--glow-matrix);
+            font-family: var(--font-mono);
+            font-weight: 700;
         }
 
         /* Animations */
@@ -517,16 +654,13 @@
         .chapter:nth-child(3) { animation-delay: 0.3s; }
         .chapter:nth-child(4) { animation-delay: 0.4s; }
         .chapter:nth-child(5) { animation-delay: 0.5s; }
+        .chapter:nth-child(6) { animation-delay: 0.6s; }
+        .chapter:nth-child(7) { animation-delay: 0.7s; }
 
-        /* Hover effects for interactive elements */
-        .nav-container:hover {
-            background: linear-gradient(180deg, var(--bg-secondary) 0%, rgba(26, 31, 46, 0.95) 100%);
-        }
-
-        /* Terminal-style typing effect for the main title */
-        .typing-effect::after {
+        /* Typing Effect */
+        .typing-cursor::after {
             content: '█';
-            color: var(--text-primary);
+            color: var(--matrix-bright);
             animation: blink 1s infinite;
         }
 
@@ -535,7 +669,7 @@
             51%, 100% { opacity: 0; }
         }
 
-        /* Glitch effect for chapter titles on hover */
+        /* Glitch Effect for Chapter Titles */
         .chapter-title {
             position: relative;
         }
@@ -553,13 +687,13 @@
 
         .chapter-title:hover::before {
             animation: glitch-1 0.3s ease-in-out;
-            color: var(--accent-cyan);
+            color: var(--cyan-electric);
             z-index: -1;
         }
 
         .chapter-title:hover::after {
             animation: glitch-2 0.3s ease-in-out;
-            color: var(--accent-pink);
+            color: var(--orange-neon);
             z-index: -2;
         }
 
@@ -581,8 +715,14 @@
     </style>
 </head>
 <body>
-    <!-- Progress bar -->
+    <!-- Matrix Rain Background -->
+    <div class="matrix-rain" id="matrix-rain"></div>
+
+    <!-- Progress Bar -->
     <div class="progress-bar"></div>
+
+    <!-- Mobile Navigation Toggle -->
+    <button class="mobile-nav-toggle" onclick="toggleMobileNav()">☰</button>
 
     <!-- Navigation -->
     <nav class="nav-container">
@@ -602,11 +742,11 @@
         </ul>
     </nav>
 
-    <!-- Main content -->
+    <!-- Main Content -->
     <main class="main-container">
         <header class="header">
             <div class="header-content">
-                <h1 class="main-title typing-effect">Claude Code 源码深度解读</h1>
+                <h1 class="main-title typing-cursor">Claude Code 源码深度解读</h1>
                 <p class="subtitle">Anthropic CLI 工具完整架构剖析与工程化洞察</p>
                 <div class="meta-info">
                     <div class="meta-item">
@@ -634,6 +774,7 @@
         </header>
 
         <div class="content">
+            <!-- Chapter 1 -->
             <section id="ch1" class="chapter">
                 <h2 class="chapter-title" data-text="第一章：背景与概述">第一章：背景与概述</h2>
 
@@ -643,40 +784,42 @@
                 <p>该事件迅速在开发者社区扩散。<a href="https://github.com/warren-wupeng/claude-code">warren-wupeng/claude-code</a> 仓库是对这批源码的公开存档，附带了一个由仓库作者额外添加的 MCP 服务器（<code>mcp-server/</code>），使任何 MCP 兼容工具（VS Code Copilot、Claude Desktop 等）都可以将此源码作为知识库进行探索。</p>
 
                 <h3 class="section-title">1.2 代码规模</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>维度</th>
-                            <th>数字</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>总行数</td>
-                            <td>~512,000 行</td>
-                        </tr>
-                        <tr>
-                            <td>源文件数</td>
-                            <td>~1,913 个</td>
-                        </tr>
-                        <tr>
-                            <td>主语言</td>
-                            <td>TypeScript（30.3 MB）</td>
-                        </tr>
-                        <tr>
-                            <td>工具实现</td>
-                            <td>41 个</td>
-                        </tr>
-                        <tr>
-                            <td>斜杠命令</td>
-                            <td>~50 个</td>
-                        </tr>
-                        <tr>
-                            <td>UI 组件</td>
-                            <td>~140 个 Ink/React 组件</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>维度</th>
+                                <th>数字</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>总行数</td>
+                                <td>~512,000 行</td>
+                            </tr>
+                            <tr>
+                                <td>源文件数</td>
+                                <td>~1,913 个</td>
+                            </tr>
+                            <tr>
+                                <td>主语言</td>
+                                <td>TypeScript（30.3 MB）</td>
+                            </tr>
+                            <tr>
+                                <td>工具实现</td>
+                                <td>41 个</td>
+                            </tr>
+                            <tr>
+                                <td>斜杠命令</td>
+                                <td>~50 个</td>
+                            </tr>
+                            <tr>
+                                <td>UI 组件</td>
+                                <td>~140 个 Ink/React 组件</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
                 <p>这不是一个玩具项目。从代码量和工程复杂度看，这是一个经过数十人多年迭代、投入大量工程资源的生产级系统。</p>
 
@@ -691,14 +834,14 @@
                 </ol>
             </section>
 
+            <!-- Chapter 2 -->
             <section id="ch2" class="chapter">
                 <h2 class="chapter-title" data-text="第二章：宏观架构">第二章：宏观架构</h2>
 
                 <h3 class="section-title">2.1 五层架构模型</h3>
                 <p>Claude Code 的代码组织遵循清晰的分层设计：</p>
 
-                <div class="ascii-art">
-┌─────────────────────────────────────────────────────┐
+                <div class="ascii-art">┌─────────────────────────────────────────────────────┐
 │  入口层 (Entrypoints)                                │
 │  cli.tsx · init.ts · sdk/ · mcp.ts                  │
 ├─────────────────────────────────────────────────────┤
@@ -713,131 +856,544 @@
 ├─────────────────────────────────────────────────────┤
 │  UI 层 (Terminal UI)                                 │
 │  components/ (~140个) · ink/ · screens/             │
-└─────────────────────────────────────────────────────┘
-                </div>
+└─────────────────────────────────────────────────────┘</div>
 
                 <h3 class="section-title">2.2 目录结构与职责</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>目录</th>
-                            <th>大小</th>
-                            <th>核心职责</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><code>src/components/</code></td>
-                            <td>9.6 MB</td>
-                            <td>Ink/React 终端 UI 组件，含消息气泡、权限弹框、进度条等</td>
-                        </tr>
-                        <tr>
-                            <td><code>src/utils/</code></td>
-                            <td>6.6 MB</td>
-                            <td>共享工具库：权限、Shell 封装、插件系统、Swarm 支持</td>
-                        </tr>
-                        <tr>
-                            <td><code>src/tools/</code></td>
-                            <td>2.7 MB</td>
-                            <td>41 个 Agent 工具实现（Bash、Read、Write、Grep 等）</td>
-                        </tr>
-                        <tr>
-                            <td><code>src/commands/</code></td>
-                            <td>2.5 MB</td>
-                            <td>~50 个斜杠命令（<code>/compact</code>、<code>/memory</code>、<code>/doctor</code> 等）</td>
-                        </tr>
-                        <tr>
-                            <td><code>src/services/</code></td>
-                            <td>1.8 MB</td>
-                            <td>外部集成：API 客户端、MCP、OAuth、LSP、Analytics</td>
-                        </tr>
-                        <tr>
-                            <td><code>src/hooks/</code></td>
-                            <td>1.2 MB</td>
-                            <td>React hooks：状态、权限、键绑定</td>
-                        </tr>
-                        <tr>
-                            <td><code>src/ink/</code></td>
-                            <td>1.0 MB</td>
-                            <td>定制 Ink 渲染器（双向文字、滚动框、备用屏幕）</td>
-                        </tr>
-                        <tr>
-                            <td><code>src/screens/</code></td>
-                            <td>1.0 MB</td>
-                            <td>全屏 TUI 视图：REPL、Doctor、Resume、Compact</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>目录</th>
+                                <th>大小</th>
+                                <th>核心职责</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>src/components/</code></td>
+                                <td>9.6 MB</td>
+                                <td>Ink/React 终端 UI 组件，含消息气泡、权限弹框、进度条等</td>
+                            </tr>
+                            <tr>
+                                <td><code>src/utils/</code></td>
+                                <td>6.6 MB</td>
+                                <td>共享工具库：权限、Shell 封装、插件系统、Swarm 支持</td>
+                            </tr>
+                            <tr>
+                                <td><code>src/tools/</code></td>
+                                <td>2.7 MB</td>
+                                <td>41 个 Agent 工具实现（Bash、Read、Write、Grep 等）</td>
+                            </tr>
+                            <tr>
+                                <td><code>src/commands/</code></td>
+                                <td>2.5 MB</td>
+                                <td>~50 个斜杠命令（<code>/compact</code>、<code>/memory</code>、<code>/doctor</code> 等）</td>
+                            </tr>
+                            <tr>
+                                <td><code>src/services/</code></td>
+                                <td>1.8 MB</td>
+                                <td>外部集成：API 客户端、MCP、OAuth、LSP、Analytics</td>
+                            </tr>
+                            <tr>
+                                <td><code>src/hooks/</code></td>
+                                <td>1.2 MB</td>
+                                <td>React hooks：状态、权限、键绑定</td>
+                            </tr>
+                            <tr>
+                                <td><code>src/ink/</code></td>
+                                <td>1.0 MB</td>
+                                <td>定制 Ink 渲染器（双向文字、滚动框、备用屏幕）</td>
+                            </tr>
+                            <tr>
+                                <td><code>src/screens/</code></td>
+                                <td>1.0 MB</td>
+                                <td>全屏 TUI 视图：REPL、Doctor、Resume、Compact</td>
+                            </tr>
+                            <tr>
+                                <td><code>SRC/cli/</code></td>
+                                <td>0.5 MB</td>
+                                <td>CLI 引导、传输层（SSE/WebSocket/Hybrid）</td>
+                            </tr>
+                            <tr>
+                                <td><code>src/bridge/</code></td>
+                                <td>0.5 MB</td>
+                                <td>IDE 桥接（VS Code、JetBrains）</td>
+                            </tr>
+                            <tr>
+                                <td><code>src/tasks/</code></td>
+                                <td>0.3 MB</td>
+                                <td>后台任务管理</td>
+                            </tr>
+                            <tr>
+                                <td><code>src/entrypoints/</code></td>
+                                <td>0.2 MB</td>
+                                <td>初始化逻辑、Agent SDK、MCP 入口</td>
+                            </tr>
+                            <tr>
+                                <td><code>src/skills/</code></td>
+                                <td>0.15 MB</td>
+                                <td>Skill 系统与内置 Skill</td>
+                            </tr>
+                            <tr>
+                                <td><code>src/native-ts/</code></td>
+                                <td>0.13 MB</td>
+                                <td>原生 TS 实现：文件索引、Yoga 布局、彩色 diff</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
                 <h3 class="section-title">2.3 主要数据流</h3>
                 <p>一次完整的用户交互，数据流经以下路径：</p>
 
-                <div class="ascii-art">
-用户键入消息
+                <div class="data-flow">用户键入消息
     │
     ▼
-screens/REPL.tsx（UI 捕获输入）
+<span class="highlight">screens/REPL.tsx</span>（UI 捕获输入）
     │
     ▼
-QueryEngine.submitMessage()（消息入队）
+<span class="highlight">QueryEngine.submitMessage()</span>（消息入队）
     │
-    ├── context.ts（并行组装 system prompt）
+    ├── <span class="highlight">context.ts</span>（并行组装 system prompt）
     │     ├── git status / log
-    │     ├── CLAUDE.md 读取
-    │     └── 权限状态检查
+    │     ├── CLAUDE.md 文件（所有父目录）
+    │     └── MEMORY.md（持久记忆）
     │
-    ├── Claude API 调用（多种传输层）
-    │     ├── SSE（Server-Sent Events）
-    │     ├── WebSocket（实时双向）
-    │     └── Hybrid（动态切换）
+    ├── <span class="highlight">query.ts</span>（调用 Anthropic API，流式）
     │
-    └── 工具调用循环
-          ├── Tool.ts（工具分发）
-          ├── permissions/（权限验证）
-          └── 具体工具执行（Bash、Read、Write...）
-                </div>
+    └── <span class="highlight">工具调用循环</span>
+          ├── Tool.checkPermissions()
+          ├── permissions.ts（全局权限决策）
+          ├── Pre-tool hooks
+          ├── Tool.call()（执行工具）
+          ├── Post-tool hooks
+          └── 追加 tool_result，继续循环
+    │
+    ▼
+<span class="highlight">SDKMessage 流</span>（yield 给 UI / SDK 消费者）
+    │
+    ▼
+<span class="highlight">components/</span>（渲染到终端）</div>
 
-                <h3 class="section-title">2.4 Bun 运行时选择</h3>
-                <p>Claude Code 基于 <strong>Bun</strong> 而非 Node.js 构建。这个选择带来了几个关键优势：</p>
+                <h3 class="section-title">2.4 运行时环境</h3>
+                <p>Claude Code 使用 <strong>Bun</strong> 作为运行时（而非 Node.js），这是一个关键的技术选型：</p>
+
                 <ul>
-                    <li><strong>启动性能</strong>：Bun 的冷启动比 Node.js 快约 3-4 倍</li>
-                    <li><strong>内置工具链</strong>：打包、测试、包管理器一体化</li>
-                    <li><strong>TypeScript 原生支持</strong>：无需额外转译步骤</li>
-                    <li><strong>Web API 兼容性</strong>：fetch、WebSocket 等 API 开箱即用</li>
+                    <li>Bun 的启动速度比 Node.js 快 3-5 倍，对于 CLI 工具的感知延迟至关重要</li>
+                    <li>Bun 内置 <code>bun:bundle</code> API，使得 feature flag 的<strong>编译时死码消除</strong>成为可能（见第六章）</li>
+                    <li>Bun 内置测试运行器，与外部测试框架无缝集成</li>
+                </ul>
+            </section>
+
+            <!-- Chapter 3 -->
+            <section id="ch3" class="chapter">
+                <h2 class="chapter-title" data-text="第三章：核心引擎——QueryEngine">第三章：核心引擎——QueryEngine</h2>
+
+                <h3 class="section-title">3.1 它是什么</h3>
+                <p><code>src/QueryEngine.ts</code> 是整个 Claude Code 的心脏，46,000 行，单文件。每个对话 session 对应一个 <code>QueryEngine</code> 实例，它持有：</p>
+
+                <ul>
+                    <li><code>mutableMessages: Message[]</code> — 完整对话历史</li>
+                    <li><code>readFileState: FileStateCache</code> — LRU 缓存，记录已读文件内容（避免重复注入）</li>
+                    <li><code>totalUsage: NonNullableUsage</code> — 累计 token 用量，用于成本计算和上下文压缩触发</li>
                 </ul>
 
-                <p>从 <code>package.json</code> 可以看出，Claude Code 严重依赖 Bun 的生态系统，这在 CLI 工具中是相对激进但富有前瞻性的技术选择。</p>
+                <p>对外暴露的核心方法只有一个：</p>
+
+                <pre><code class="language-typescript">async *submitMessage(input: string): AsyncGenerator&lt;SDKMessage&gt;</code></pre>
+
+                <p>返回值是一个<strong>异步生成器</strong>——不是 Promise，不是回调，而是一个可以被 <code>for await...of</code> 消费的流。UI 层、SDK 外部消费者、测试框架都通过这个统一接口接收实时消息。</p>
+
+                <h3 class="section-title">3.2 submitMessage() 主循环拆解</h3>
+                <p><code>submitMessage()</code> 的执行分为六个有序阶段：</p>
+
+                <p><strong>① 预处理</strong>：判断输入是否是 <code>/slash-command</code> 或 <code>!bash-shortcut</code>，若是则走命令分发路径，绕过 LLM 调用。</p>
+
+                <p><strong>② 上下文组装</strong>：并行调用 <code>fetchSystemPromptParts()</code>，同时获取 git 状态、CLAUDE.md 内容、工具 prompt、用户画像。全部用 <code>Promise.all</code> 并发，不串行等待。</p>
+
+                <p><strong>③ 记忆注入</strong>：读取 MEMORY.md（若 auto-memory 开启），追加到 system prompt 末尾。</p>
+
+                <p><strong>④ API 调用</strong>：调用 <code>query()</code> 向 Anthropic API 发起流式请求，逐 chunk yield 给调用方。</p>
+
+                <p><strong>⑤ 工具调用循环</strong>：收到 <code>tool_use</code> block 后，进入循环：权限检查 → 执行 → 追加 <code>tool_result</code> → 继续请求，直到模型不再发起工具调用为止。</p>
+
+                <p><strong>⑥ 压缩检查</strong>：每轮结束后检查累计 token 是否超过阈值，若超过触发 <code>autoCompact()</code>。</p>
+
+                <h3 class="section-title">3.3 上下文压缩策略</h3>
+                <p>长对话的最大挑战是上下文窗口溢出。Claude Code 实现了四种压缩方案，按场景分别使用：</p>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>方案</th>
+                                <th>文件</th>
+                                <th>触发条件</th>
+                                <th>机制</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>autoCompact</code></td>
+                                <td><code>services/compact/autoCompact.ts</code></td>
+                                <td>token 超阈值，自动</td>
+                                <td>用 API 对旧轮次生成摘要，替换原始消息</td>
+                            </tr>
+                            <tr>
+                                <td><code>compact</code></td>
+                                <td><code>services/compact/compact.ts</code></td>
+                                <td><code>/compact</code> 命令，用户主动</td>
+                                <td>完整摘要，保留最近 N 轮原文</td>
+                            </tr>
+                            <tr>
+                                <td><code>microCompact</code></td>
+                                <td><code>services/compact/microCompact.ts</code></td>
+                                <td>每轮可选</td>
+                                <td>轻量逐轮摘要，压缩比低但信息损失小</td>
+                            </tr>
+                            <tr>
+                                <td><code>snipCompact</code></td>
+                                <td><code>services/compact/snipCompact.ts</code></td>
+                                <td>feature-gated</td>
+                                <td>在历史中打"Snip"标记，按需恢复原始片段</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>其中 <code>snipCompact</code> 最有意思：它不是真正删除历史，而是在对话流中插入一个 <code>SnipBoundary</code> 标记，将旧内容移入侧存储。当模型需要某段历史时，可以通过工具调用"恢复"这段内容——类似操作系统的虚拟内存换页，但语义层面的。</p>
+
+                <h3 class="section-title">3.4 CLAUDE.md 记忆系统</h3>
+                <p>Claude Code 的"记忆"不依赖数据库，而是<strong>Markdown 文件即配置</strong>的设计。</p>
+
+                <p><code>context.ts</code> 在组装 system prompt 时，会从当前目录向上遍历所有父目录，收集每一级的 <code>CLAUDE.md</code> 文件：</p>
+
+                <pre><code>/home/user/                    ← 全局指令（工具偏好、代码风格）
+/home/user/projects/           ← 团队级指令
+/home/user/projects/my-app/    ← 项目级指令（通常 git 管理）</code></pre>
+
+                <p>层级越深，优先级越高，子目录的指令可以覆盖父目录。此外还有两个特殊文件：</p>
+
+                <ul>
+                    <li><strong><code>~/.claude/MEMORY.md</code></strong>：auto-memory 功能写入的持久记忆，上限 200 行 / 25 KB，超出则截断</li>
+                    <li><strong><code>.claude/settings.json</code></strong>：项目级权限和工具配置，不注入 prompt，由权限系统读取</li>
+                </ul>
+
+                <p>这个设计的精妙之处在于：指令是<strong>人类可读可编辑的</strong>，可以 git 管理，可以 code review，完全透明。</p>
             </section>
 
-            <!-- Placeholder for remaining chapters -->
-            <section id="ch3" class="chapter">
-                <h2 class="chapter-title" data-text="第三章：核心引擎—QueryEngine">第三章：核心引擎—QueryEngine</h2>
-                <p><em>本章节内容正在加载中，完整报告包含 QueryEngine 的完整分析...</em></p>
-            </section>
-
+            <!-- Chapter 4 -->
             <section id="ch4" class="chapter">
                 <h2 class="chapter-title" data-text="第四章：工具系统">第四章：工具系统</h2>
-                <p><em>本章节内容正在加载中，完整报告包含 41 个工具的详细分析...</em></p>
+
+                <h3 class="section-title">4.1 Tool 接口设计</h3>
+                <p>每个工具都实现 <code>src/Tool.ts</code> 中定义的 <code>Tool&lt;Input, Output&gt;</code> 接口，核心成员如下：</p>
+
+                <pre><code class="language-typescript">interface Tool&lt;Input, Output&gt; {
+  name: string                          // 工具名，模型调用时使用
+  description: string                   // 告诉模型这个工具做什么
+  inputSchema: ZodSchema&lt;Input&gt;         // 入参校验（Zod）
+  call(input, context): Promise&lt;Output&gt; // 实际执行逻辑
+  checkPermissions(input, context)      // 工具级权限检查
+  isReadOnly(): boolean                 // 只读工具可跳过部分权限流程
+  isConcurrencySafe(): boolean          // 是否可与其他工具并发执行
+  renderToolUseMessage(input)           // 在 UI 中如何展示"模型在调用这个工具"
+  renderToolResultMessage(output)       // 在 UI 中如何展示工具返回结果
+}</code></pre>
+
+                <p>大多数成员有合理默认值，工具作者只需覆盖与默认行为不同的部分。这通过 <code>buildTool()</code> 工厂函数实现——它在运行时做 <code>{...TOOL_DEFAULTS, ...def}</code> 展开，同时在类型层面用条件类型推导保留字面量类型，避免工具作者的 TypeScript 类型丢失精度。</p>
+
+                <h3 class="section-title">4.2 权限双门控机制</h3>
+                <p>每次工具调用都要通过<strong>两道独立的权限关卡</strong>：</p>
+
+                <p><strong>第一道：工具自身的 <code>checkPermissions()</code></strong><br>
+                工具实现者在这里写领域相关的危险判断。例如 BashTool 会检查命令是否包含 <code>rm -rf</code>、<code>curl | bash</code> 等危险模式；WriteFileTool 会检查路径是否在项目根目录之外。这道门只有工具自己最清楚该怎么把守。</p>
+
+                <p><strong>第二道：全局 <code>permissions.ts</code></strong><br>
+                不管工具自身怎么判断，最终还要经过全局策略：</p>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>模式</th>
+                                <th>行为</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>bypassPermissions</code></td>
+                                <td>全部自动允许（CI/自动化场景）</td>
+                            </tr>
+                            <tr>
+                                <td><code>plan</code></td>
+                                <td>展示操作计划，一次性整体授权</td>
+                            </tr>
+                            <tr>
+                                <td><code>auto</code></td>
+                                <td>ML 分类器判断风险，低风险自动放行</td>
+                            </tr>
+                            <tr>
+                                <td><code>default</code></td>
+                                <td>逐操作弹出 UI 提示用户确认</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>两道门相互独立：工具可以比全局策略更严格，但全局策略永远是最终裁决者。此外 Pre-tool hooks（shell 脚本）可以在第二道门之前插入自定义逻辑，实现企业级策略扩展。</p>
+
+                <h3 class="section-title">4.3 41 个内置工具分类</h3>
+
+                <div class="ascii-art">文件操作（只读）
+  Read · Glob · Grep · LS · NotebookRead
+
+文件操作（写入）
+  Write · Edit · NotebookEdit · MultiEdit
+
+代码执行
+  Bash · BashBackground · Computer（截图/点击）
+
+Agent 协作
+  Agent · TeamCreate · TeamDelete · SendMessage
+  TaskCreate · TaskUpdate · TaskList · TaskOutput · TaskStop
+
+MCP 与外部集成
+  MCPTool（动态注册，每个 MCP server 暴露的工具）
+
+Web 与搜索
+  WebFetch · WebSearch
+
+其他
+  TodoWrite · ExitPlanMode · EnterPlanMode
+  Skill · CronCreate · CronDelete · CronList
+  EnterWorktree · ExitWorktree</div>
+
+                <p>几个值得关注的设计：</p>
+
+                <ul>
+                    <li><strong>MCPTool 是动态的</strong>：不是硬编码的，而是在 MCP server 连接后根据服务端声明动态注册，数量不固定</li>
+                    <li><strong>Agent 工具递归调用</strong>：<code>AgentTool</code> 会启动一个子 QueryEngine，实现 Agent 嵌套，每层有独立的权限上下文</li>
+                    <li><strong>Bash vs BashBackground</strong>：前者阻塞等待结果，后者立即返回 task ID，结果通过 <code>TaskOutput</code> 异步获取</li>
+                </ul>
             </section>
 
+            <!-- Chapter 5 -->
             <section id="ch5" class="chapter">
-                <h2 class="chapter-title" data-text="第五章：多Agent协作—Swarm">第五章：多Agent协作—Swarm</h2>
-                <p><em>本章节内容正在加载中，完整报告包含 Swarm 系统的完整分析...</em></p>
+                <h2 class="chapter-title" data-text="第五章：多Agent协作——Swarm">第五章：多Agent协作——Swarm</h2>
+
+                <h3 class="section-title">5.1 进程隔离设计</h3>
+                <p>Claude Code 的多 Agent 不是在同一个进程内跑多个协程，而是<strong>每个 Agent 是一个独立的 Claude Code 进程</strong>。</p>
+
+                <p>这是一个刻意的架构选择：进程隔离意味着每个 Agent 有独立的内存空间、独立的权限上下文、独立的崩溃边界。一个 Agent 挂掉不会拖垮整个团队。</p>
+
+                <p>Team Leader 是唯一持有终端 UI 的进程，Worker Agent 以 headless 模式运行（<code>CLAUDE_CODE_COORDINATOR_MODE=1</code> 环境变量标识）。用户始终只看到一个界面，所有 Worker 的权限请求都会通过 <code>leaderPermissionBridge.ts</code> 上报给 Leader，在 Leader 的 UI 中集中弹出确认。</p>
+
+                <p>后端支持三种运行模式：</p>
+                <ul>
+                    <li><strong>iTerm2 backend</strong>：每个 Agent 开一个新 tab（macOS 专属）</li>
+                    <li><strong>tmux backend</strong>：每个 Agent 开一个新 pane</li>
+                    <li><strong>InProcess backend</strong>：调试用，伪进程隔离</li>
+                </ul>
+
+                <h3 class="section-title">5.2 Mailbox 通信机制</h3>
+                <p>进程间没有共享内存，通信全靠<strong>文件系统 Mailbox</strong>。</p>
+
+                <p>团队创建时，会在 <code>~/.claude/teams/{team-name}/</code> 下建立配置文件和 mailbox 目录：</p>
+
+                <pre><code>~/.claude/teams/my-team/
+  config.json          ← 团队成员列表（name、agentId、agentType）
+  mailbox/
+    leader-inbox/      ← Worker → Leader 的消息队列
+    worker-a-inbox/    ← Leader → Worker-A 的消息队列
+    worker-b-inbox/
+~/.claude/tasks/my-team/
+  task-001.json        ← 任务状态文件（pending/running/completed）</code></pre>
+
+                <p>每条消息是一个 JSON 文件，发送方写入，接收方轮询读取后标记已读。<code>SendMessageTool</code> 本质就是向目标 Agent 的 inbox 目录写一个 JSON 文件。</p>
+
+                <p>这个设计的好处是极度简单、可调试——用 <code>ls</code> 就能看到消息队列，用文本编辑器就能插入或修改消息，不依赖任何消息中间件。代价是轮询延迟（约 500ms），对于 Agent 协作场景完全够用。</p>
+
+                <h3 class="section-title">5.3 任务状态机</h3>
+                <p>任务（Task）是 Swarm 的调度单元。<code>src/Task.ts</code> 定义了两个核心枚举：</p>
+
+                <p><strong>TaskType</strong>（任务类型）：</p>
+                <ul>
+                    <li><code>local_bash</code> — 本地 shell 命令</li>
+                    <li><code>local_agent</code> — 本地 Agent 子进程</li>
+                    <li><code>remote_agent</code> — 远程 Agent（预留）</li>
+                    <li><code>in_process_teammate</code> — 进程内伪 Agent（调试）</li>
+                    <li><code>local_workflow</code> — 本地工作流</li>
+                    <li><code>monitor_mcp</code> — MCP 监控任务</li>
+                    <li><code>dream</code> — 推测性/实验性任务类型</li>
+                </ul>
+
+                <p><strong>TaskStatus</strong>（状态流转）：</p>
+                <pre><code>pending → running → completed
+                 ↘ failed
+                 ↘ killed</code></pre>
+
+                <p><code>isTerminalTaskStatus()</code> 是一个类型守卫函数，判断状态是否已终止。任务 ID 采用类型前缀 + 8 位随机字母数字的格式（如 <code>b3f7a9kx</code>），在日志和 UI 中可通过前缀快速识别任务类型。每个任务的完整状态持久化在 <code>~/.claude/tasks/{team-name}/task-{id}.json</code>，重启后可恢复。</p>
             </section>
 
+            <!-- Chapter 6 -->
             <section id="ch6" class="chapter">
                 <h2 class="chapter-title" data-text="第六章：工程化亮点">第六章：工程化亮点</h2>
-                <p><em>本章节内容正在加载中，完整报告包含工程化最佳实践...</em></p>
+
+                <h3 class="section-title">6.1 Bun Feature Flag 作为构建系统</h3>
+                <p>Claude Code 用 Bun 的 <code>bun:bundle</code> API 实现了<strong>编译时特性门控</strong>，而不是传统的运行时 <code>if (process.env.FEATURE_X)</code> 判断：</p>
+
+                <pre><code class="language-typescript">import { feature } from 'bun:bundle'
+
+const coordinatorModule = feature('COORDINATOR_MODE')
+  ? require('./coordinatorMode.js')
+  : null</code></pre>
+
+                <p>当 <code>COORDINATOR_MODE</code> 为 false 时，<code>require('./coordinatorMode.js')</code> 这整个分支在构建阶段就被 dead code elimination 完全删除——不是运行时跳过，是根本不存在于产物中。</p>
+
+                <p>目前有 8 个这样的特性门控：</p>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>特性</th>
+                                <th>功能</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>COORDINATOR_MODE</code></td>
+                                <td>多 Agent Swarm 协调</td>
+                            </tr>
+                            <tr>
+                                <td><code>PROACTIVE</code></td>
+                                <td>主动建议模式</td>
+                            </tr>
+                            <tr>
+                                <td><code>KAIROS</code></td>
+                                <td>时机感知（实验性）</td>
+                            </tr>
+                            <tr>
+                                <td><code>BRIDGE_MODE</code></td>
+                                <td>IDE 桥接（VS Code / JetBrains）</td>
+                            </tr>
+                            <tr>
+                                <td><code>DAEMON</code></td>
+                                <td>后台守护进程</td>
+                            </tr>
+                            <tr>
+                                <td><code>VOICE_MODE</code></td>
+                                <td>语音输入</td>
+                            </tr>
+                            <tr>
+                                <td><code>AGENT_TRIGGERS</code></td>
+                                <td>自动触发规则</td>
+                            </tr>
+                            <tr>
+                                <td><code>MONITOR_TOOL</code></td>
+                                <td>监控工具</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>Ant 内部版本额外通过 <code>process.env.USER_TYPE === 'ant'</code> 再加一层门控，公开发布版本中对应代码完全不存在。</p>
+
+                <h3 class="section-title">6.2 启动速度优化</h3>
+                <p>CLI 工具的启动延迟是用户体验的第一印象。Claude Code 用三个层次的技巧将感知延迟压到最低。</p>
+
+                <p><strong>① 快速退出路径（Fast Paths）</strong></p>
+
+                <p><code>src/entrypoints/cli.tsx</code> 的 <code>main()</code> 函数开头是一组优先级最高的分支判断：</p>
+
+                <pre><code class="language-typescript">if (args.version) { print(VERSION); process.exit(0) }  // 零模块加载
+if (args['daemon-worker']) { startDaemonWorker(); return }
+if (args['remote-control']) { startBridge(); return }
+// ...其余 6 个快速路径</code></pre>
+
+                <p><code>--version</code> 在加载任何业务模块之前就返回，对用户来说是即时响应。</p>
+
+                <p><strong>② 模块懒加载</strong></p>
+
+                <p>OpenTelemetry（~400 KB）、gRPC（~700 KB）等重型模块全部用 <code>dynamic import()</code> 延迟加载，只在真正需要时才触发。主路径代码不等这些模块。</p>
+
+                <p><strong>③ I/O 与模块加载并发</strong></p>
+
+                <p><code>src/main.tsx</code> 的顶层副作用中，MDM 策略读取和 macOS Keychain 凭证预取在模块 <code>import</code> 阶段就已经异步启动：</p>
+
+                <pre><code class="language-typescript">startMdmRawRead()        // 模块加载时立即开始
+startKeychainPrefetch()  // 与后续 import 并发执行</code></pre>
+
+                <p>等到 CLI 真正需要这些数据时，I/O 早已在后台完成，延迟被隐藏。</p>
+
+                <h3 class="section-title">6.3 TypeScript 类型系统亮点</h3>
+                <p><strong><code>DeepImmutable&lt;T&gt;</code> 权限状态不变性</strong></p>
+
+                <p><code>ToolPermissionContext</code>（权限决策的输入）被包裹在自定义的 <code>DeepImmutable&lt;T&gt;</code> 工具类型中，递归地将所有嵌套属性变为 <code>readonly</code>：</p>
+
+                <pre><code class="language-typescript">type DeepImmutable&lt;T&gt; = {
+  readonly [K in keyof T]: T[K] extends object ? DeepImmutable&lt;T[K]&gt; : T[K]
+}</code></pre>
+
+                <p>这在编译期阻止了任何工具实现意外修改共享权限状态的可能——不是文档约定，是类型系统强制执行。</p>
+
+                <p><strong><code>lazySchema()</code> 规避循环依赖</strong></p>
+
+                <p>工具的 Zod 输入 schema 有时需要引用其他工具的类型，直接 import 会产生循环依赖。解决方案是延迟构造：</p>
+
+                <pre><code class="language-typescript">const inputSchema = lazySchema(() => z.object({
+  filePath: z.string(),
+  content: FileContentSchema(),  // 延迟求值
+}))</code></pre>
+
+                <p><code>lazySchema()</code> 包装器将 schema 构造推迟到首次调用时，此时所有模块已加载完毕，循环引用问题自然消失。</p>
+
+                <p><strong><code>BuiltTool&lt;D&gt;</code> 保留字面量类型</strong></p>
+
+                <p><code>buildTool()</code> 的返回类型是 <code>BuiltTool&lt;D&gt;</code>，用条件类型在 <code>D</code> 和 <code>TOOL_DEFAULTS</code> 的展开上保留了每个字段的字面量类型，而不是退化为宽泛的 <code>boolean</code> 或 <code>string</code>。这使得 <code>isConcurrencySafe: true</code> 在类型层面是 <code>true</code> 而非 <code>boolean</code>，下游代码可以依赖这个精确信息。</p>
             </section>
 
+            <!-- Chapter 7 -->
             <section id="ch7" class="chapter">
                 <h2 class="chapter-title" data-text="第七章：总结与启示">第七章：总结与启示</h2>
-                <p><em>本章节内容正在加载中，完整报告包含总结和未来展望...</em></p>
+
+                <h3 class="section-title">7.1 对 AI Agent 架构设计的启示</h3>
+                <p>读完这份代码，有几个判断值得记下来。</p>
+
+                <p><strong>异步生成器是 Agent 流式输出的正确抽象。</strong> <code>AsyncGenerator&lt;SDKMessage&gt;</code> 比回调、比事件发射器、比 Promise 链都干净。调用方用 <code>for await...of</code> 消费，可以随时 <code>break</code> 中断，背压（backpressure）天然处理。zoey-ai 目前的 WebSocket 透传方案更底层，如果未来重构可以考虑在服务层引入这个模式。</p>
+
+                <p><strong>工具系统的关键是接口统一而非实现统一。</strong> 41 个工具行为各异，但都实现同一个 <code>Tool&lt;Input, Output&gt;</code> 接口。QueryEngine 不需要知道 BashTool 怎么执行命令，只需要知道它有 <code>call()</code>、<code>checkPermissions()</code>、<code>renderToolUseMessage()</code>。这是真正的开闭原则——新增工具不修改引擎。</p>
+
+                <p><strong>Markdown 即配置的思路值得借鉴。</strong> CLAUDE.md 系统让"给 AI 的指令"变成了可 git 管理、可 code review 的工件，而不是藏在数据库某个字段里的魔法字符串。对于 zoey-ai 这类长期个人 Agent，用户的偏好和背景也可以考虑以类似方式存储。</p>
+
+                <h3 class="section-title">7.2 权限系统值得借鉴之处</h3>
+                <p>Claude Code 的权限架构是这份代码里工程完成度最高的部分，有两点特别值得学习。</p>
+
+                <p><strong>分级授权比二元授权更实用。</strong> 不是"允许/拒绝"两档，而是四档：全自动（<code>bypass</code>）、计划确认（<code>plan</code>）、ML 分类（<code>auto</code>）、逐步确认（<code>default</code>）。用户可以根据信任程度和场景灵活选择。在 CI 环境选 bypass，在生产操作选 default，平时用 auto——同一套代码服务完全不同的安全需求。</p>
+
+                <p><strong>双门控的层次分离是正确的。</strong> 工具自身负责"这个操作是否危险"（领域知识），全局策略负责"危险操作该怎么处理"（策略知识）。两者互不侵犯。如果把策略逻辑写进工具里，每次策略调整都要改 41 个工具；如果把领域逻辑写进全局策略，全局策略会变成一个无法维护的大 switch。</p>
+
+                <p><strong>Pre/Post Hook 是正确的扩展点。</strong> 企业客户有定制权限策略的需求，但不应该 fork 代码。Shell 脚本 hook 是正确答案——标准接口，任何语言实现，不耦合内部实现。这个思路和 git hooks 一脉相承。</p>
+
+                <h3 class="section-title">7.3 最后的判断</h3>
+                <p>这份代码回答了一个重要问题：<strong>一个生产级 AI Agent 系统的复杂度应该在哪里？</strong></p>
+
+                <p>Claude Code 的答案是：复杂度应该在<strong>基础设施层</strong>（权限系统、上下文管理、工具接口、进程协调），而不在<strong>业务逻辑层</strong>（每个工具的具体实现）。BashTool 的实现很简单，因为 QueryEngine 帮它处理了流式输出、错误重试、权限审计；WriteFileTool 的实现也很简单，因为 ToolPermissionContext 帮它处理了状态不变性和并发安全。</p>
+
+                <p>这给我们自己构建 Agent 系统一个参照：<strong>不要急着堆功能，先把基础设施做扎实</strong>。一个干净的工具接口、一套可组合的权限策略、一个清晰的上下文压缩机制——这些比"再加 10 个工具"更有长期价值。</p>
+
+                <p>最后值得一提的是：这份代码是意外泄漏的，但从工程质量来看，它完全经得起公开审阅。命名清晰、关注点分离、类型严格、注释到位——这不是应付检查的代码，是真正写给人看、写给时间看的代码。</p>
+
+                <hr>
+
+                <p><em>全文完。共 7 章，约 7,000 字。</em><br>
+                <em>基于 warren-wupeng/claude-code 仓库，截至 2026-03-31。</em></p>
             </section>
         </div>
     </main>
 
-    <!-- Back to top button -->
+    <!-- Back to Top Button -->
     <button class="back-to-top" onclick="scrollToTop()">
         ↑
     </button>
@@ -845,6 +1401,35 @@ QueryEngine.submitMessage()（消息入队）
     <script>
         // Initialize highlight.js
         hljs.highlightAll();
+
+        // Matrix Rain Effect
+        function createMatrixRain() {
+            const matrixContainer = document.getElementById('matrix-rain');
+            const characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!@#$%^&*(){}[]|;:,.<>?';
+
+            function createColumn() {
+                const column = document.createElement('div');
+                column.className = 'matrix-column';
+                column.style.left = Math.random() * 100 + '%';
+                column.style.animationDuration = (Math.random() * 3 + 2) + 's';
+
+                let text = '';
+                const length = Math.floor(Math.random() * 10) + 5;
+                for (let i = 0; i < length; i++) {
+                    text += characters.charAt(Math.floor(Math.random() * characters.length)) + '\n';
+                }
+                column.textContent = text;
+
+                matrixContainer.appendChild(column);
+
+                setTimeout(() => {
+                    column.remove();
+                }, 5000);
+            }
+
+            // Create new columns periodically
+            setInterval(createColumn, 300);
+        }
 
         // Progress bar functionality
         function updateProgressBar() {
@@ -864,7 +1449,7 @@ QueryEngine.submitMessage()（消息入队）
             let currentSection = '';
             sections.forEach(section => {
                 const rect = section.getBoundingClientRect();
-                if (rect.top <= 100 && rect.bottom >= 100) {
+                if (rect.top <= 150 && rect.bottom >= 150) {
                     currentSection = section.id;
                 }
             });
@@ -895,6 +1480,12 @@ QueryEngine.submitMessage()（消息入队）
             });
         }
 
+        // Mobile navigation toggle
+        function toggleMobileNav() {
+            const nav = document.querySelector('.nav-container');
+            nav.classList.toggle('open');
+        }
+
         // Smooth scroll for navigation links
         document.querySelectorAll('.nav-toc a').forEach(link => {
             link.addEventListener('click', (e) => {
@@ -906,6 +1497,11 @@ QueryEngine.submitMessage()（消息入队）
                         behavior: 'smooth',
                         block: 'start'
                     });
+
+                    // Close mobile nav after selection
+                    if (window.innerWidth <= 1024) {
+                        document.querySelector('.nav-container').classList.remove('open');
+                    }
                 }
             });
         });
@@ -922,41 +1518,26 @@ QueryEngine.submitMessage()（消息入队）
             updateProgressBar();
             updateActiveNavItem();
             updateBackToTop();
+            createMatrixRain();
         });
 
-        // Add typing effect to main title
+        // Initialize typing effect
         document.addEventListener('DOMContentLoaded', () => {
             const title = document.querySelector('.main-title');
-            title.classList.add('typing-effect');
+            title.classList.add('typing-cursor');
         });
 
-        // Mobile navigation toggle (if needed)
-        function toggleMobileNav() {
-            const nav = document.querySelector('.nav-container');
-            nav.classList.toggle('open');
-        }
-
-        // Add mobile nav button if on mobile
-        if (window.innerWidth <= 1024) {
-            const mobileNavButton = document.createElement('button');
-            mobileNavButton.innerHTML = '☰';
-            mobileNavButton.style.cssText = `
-                position: fixed;
-                top: 20px;
-                left: 20px;
-                z-index: 1001;
-                background: var(--text-primary);
-                color: var(--bg-primary);
-                border: none;
-                padding: 10px;
-                border-radius: 5px;
-                font-size: 18px;
-                cursor: pointer;
-                box-shadow: var(--glow-primary);
-            `;
-            mobileNavButton.onclick = toggleMobileNav;
-            document.body.appendChild(mobileNavButton);
-        }
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Press 't' to go to top
+            if (e.key === 't' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                scrollToTop();
+            }
+            // Press 'Escape' to close mobile nav
+            if (e.key === 'Escape') {
+                document.querySelector('.nav-container').classList.remove('open');
+            }
+        });
     </script>
 </body>
 </html>
